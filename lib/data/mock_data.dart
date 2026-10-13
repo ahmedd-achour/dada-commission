@@ -5,6 +5,8 @@ import '../models/models.dart';
 /// (Yasmine, Gold level, 184 DC after a 684 DC commission and a 50 DT voucher).
 /// Replace with Firestore reads once authentication is wired.
 class MockData {
+  static const _img = 'assets/images/fluent';
+
   MockData(this.now);
 
   final DateTime now;
@@ -29,6 +31,7 @@ class MockData {
     tier: AmbassadorTier.gold,
     completedRentals3m: 10,
     isIdVerified: true,
+    birthDate: DateTime(2001, 5, 14),
     createdAt: _ago(days: 120),
   );
 
@@ -117,6 +120,7 @@ class MockData {
       companyId: 'c_dada',
       companyName: 'Dada Rent Car',
       model: 'Kia Picanto',
+      imageUrl: '$_img/car_citadine.png',
       category: CarCategory.citadine,
       pricePerDay: 150,
       city: 'Tunis',
@@ -127,6 +131,7 @@ class MockData {
       companyId: 'c_dada',
       companyName: 'Dada Rent Car',
       model: 'Renault Clio 5',
+      imageUrl: '$_img/car_berline.png',
       category: CarCategory.compacte,
       pricePerDay: 170,
       city: 'Tunis',
@@ -136,6 +141,7 @@ class MockData {
       companyId: 'c_dada',
       companyName: 'Dada Rent Car',
       model: 'Peugeot 3008',
+      imageUrl: '$_img/car_suv.png',
       category: CarCategory.suv,
       pricePerDay: 280,
       city: 'Tunis',
@@ -146,6 +152,7 @@ class MockData {
       companyId: 'c_dada',
       companyName: 'Dada Rent Car',
       model: 'Fiat Doblò',
+      imageUrl: '$_img/car_utilitaire.png',
       category: CarCategory.utilitaire,
       pricePerDay: 190,
       city: 'Ben Arous',
@@ -156,6 +163,7 @@ class MockData {
       companyId: 'c_sahara',
       companyName: 'Sahara Cars',
       model: 'Hyundai i10',
+      imageUrl: '$_img/car_citadine.png',
       category: CarCategory.citadine,
       pricePerDay: 120,
       city: 'Djerba',
@@ -166,6 +174,7 @@ class MockData {
       companyId: 'c_sahara',
       companyName: 'Sahara Cars',
       model: 'Volkswagen Golf 8',
+      imageUrl: '$_img/car_berline.png',
       category: CarCategory.berline,
       pricePerDay: 220,
       city: 'Djerba',
@@ -190,7 +199,7 @@ class MockData {
       referralCode: guest.referralCode,
       isSponsored: true,
       likeCount: 48,
-      commentCount: 6,
+      commentCount: 2,
       shareCount: 12,
       createdAt: _ago(hours: 2),
     ),
@@ -204,7 +213,7 @@ class MockData {
           "🏆 Défi d'octobre : 5 locations terminées = +500 DC !\n"
           'Fin le 31 octobre. Partagez vos codes 🚀',
       likeCount: 132,
-      commentCount: 21,
+      commentCount: 1,
       shareCount: 40,
       createdAt: _ago(hours: 6),
     ),
@@ -218,7 +227,6 @@ class MockData {
           'Mon 11e client ce mois-ci 🎉 Merci à tous ceux qui ont réservé '
           'avec SARA11 !',
       likeCount: 27,
-      commentCount: 4,
       createdAt: _ago(hours: 9),
     ),
     Post(
@@ -234,7 +242,6 @@ class MockData {
       carCompanyName: 'Dada Rent Car',
       referralCode: 'AMINE14',
       likeCount: 19,
-      commentCount: 2,
       shareCount: 3,
       createdAt: _ago(days: 1, hours: 3),
     ),
@@ -256,6 +263,37 @@ class MockData {
       createdAt: _ago(days: 2),
     ),
   ];
+
+  late final Map<String, List<Comment>> comments = {
+    'p1': [
+      Comment(
+        id: 'c1',
+        postId: 'p1',
+        authorId: 'u_karim',
+        authorName: 'Karim M.',
+        text: 'Je la prends pour le week-end prochain 🔥',
+        createdAt: _ago(hours: 1, minutes: 20),
+      ),
+      Comment(
+        id: 'c2',
+        postId: 'p1',
+        authorId: 'u_sara',
+        authorName: 'Sara K.',
+        text: 'Super photo ! Hammamet en octobre 😍',
+        createdAt: _ago(minutes: 45),
+      ),
+    ],
+    'p2': [
+      Comment(
+        id: 'c3',
+        postId: 'p2',
+        authorId: 'u_amine',
+        authorName: 'Amine B.',
+        text: "J'en suis à 4, plus qu'une ! 💪",
+        createdAt: _ago(hours: 3),
+      ),
+    ],
+  };
 
   late final List<Referral> referrals = [
     Referral(
@@ -371,6 +409,7 @@ class MockData {
       title: "Bon d'achat 20 DT",
       category: RewardCategory.voucher,
       priceCoins: 200,
+      imageUrl: '$_img/reward_shopping.png',
       description: 'Grandes surfaces partenaires.',
     ),
     Reward(
@@ -378,6 +417,7 @@ class MockData {
       title: "Bon d'achat 50 DT",
       category: RewardCategory.voucher,
       priceCoins: 500,
+      imageUrl: '$_img/reward_voucher.png',
       description: 'Grandes surfaces partenaires.',
     ),
     Reward(
@@ -385,6 +425,7 @@ class MockData {
       title: "Bon d'achat 100 DT",
       category: RewardCategory.voucher,
       priceCoins: 1000,
+      imageUrl: '$_img/reward_shopping.png',
       description: 'Grandes surfaces partenaires.',
     ),
     Reward(
@@ -393,21 +434,24 @@ class MockData {
       category: RewardCategory.phone,
       priceCoins: 9000,
       stock: 5,
+      imageUrl: '$_img/reward_phone.png',
       description: 'Smartphone milieu de gamme, garantie 1 an.',
     ),
     Reward(
-      id: 'rw_tablet',
-      title: 'Tablette',
+      id: 'rw_laptop',
+      title: 'PC portable',
       category: RewardCategory.tablet,
-      priceCoins: 6000,
+      priceCoins: 15000,
       stock: 3,
-      description: 'Tablette 10 pouces.',
+      imageUrl: '$_img/reward_laptop.png',
+      description: 'PC portable 15 pouces pour les études ou le travail.',
     ),
     Reward(
       id: 'rw_day',
       title: '1 jour de location',
       category: RewardCategory.rental,
       priceCoins: 1500,
+      imageUrl: '$_img/reward_rental_day.png',
       description: 'Une journée offerte chez Dada Rent Car.',
     ),
     Reward(
@@ -415,6 +459,7 @@ class MockData {
       title: 'Voiture plus grande',
       category: RewardCategory.rental,
       priceCoins: 800,
+      imageUrl: '$_img/car_suv.png',
       description: 'Surclassement sur votre prochaine location.',
     ),
     Reward(
@@ -422,19 +467,38 @@ class MockData {
       title: 'Recharge 10 DT',
       category: RewardCategory.topUp,
       priceCoins: 100,
+      imageUrl: '$_img/reward_topup.png',
       description: 'Recharge téléphone ou internet mobile.',
     ),
     Reward(
       id: 'rw_buds',
-      title: 'Écouteurs sans fil',
+      title: 'Casque sans fil',
       category: RewardCategory.leisure,
       priceCoins: 1200,
+      imageUrl: '$_img/reward_headphone.png',
+    ),
+    Reward(
+      id: 'rw_watch',
+      title: 'Montre connectée',
+      category: RewardCategory.leisure,
+      priceCoins: 2500,
+      stock: 10,
+      imageUrl: '$_img/reward_watch.png',
+    ),
+    Reward(
+      id: 'rw_resto',
+      title: 'Dîner pour 2',
+      category: RewardCategory.leisure,
+      priceCoins: 900,
+      imageUrl: '$_img/reward_restaurant.png',
+      description: 'Restaurants partenaires à Tunis, Sousse et Hammamet.',
     ),
     Reward(
       id: 'rw_fuel',
       title: 'Bon carburant 30 DT',
       category: RewardCategory.leisure,
       priceCoins: 300,
+      imageUrl: '$_img/reward_fuel.png',
     ),
   ];
 

@@ -1,241 +1,240 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../core/formatters.dart';
 import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
+import '../business/business_guide_screen.dart';
+import '../setup/account_setup_screen.dart';
 
-/// Lets another rent-car company join the platform. The request stays
-/// "pending" until the Dada team approves it; then its cars show up in the
-/// marketplace and ambassadors can share them.
-class CompanyRegisterScreen extends StatefulWidget {
+/// "Espace entreprise": follow the company file, send missing documents.
+/// Registration itself happens in the account-setup wizard.
+class CompanyRegisterScreen extends StatelessWidget {
   const CompanyRegisterScreen({super.key});
-
-  @override
-  State<CompanyRegisterScreen> createState() => _CompanyRegisterScreenState();
-}
-
-class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
-  final _form = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _tax = TextEditingController();
-  final _city = TextEditingController();
-  final _address = TextEditingController();
-  final _phone = TextEditingController();
-  final _email = TextEditingController();
-  final _fleet = TextEditingController();
-  bool _accepted = false;
-
-  @override
-  void dispose() {
-    for (final c in [_name, _tax, _city, _address, _phone, _email, _fleet]) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  String? _required(String? v) =>
-      (v == null || v.trim().isEmpty) ? 'Champ obligatoire' : null;
-
-  void _submit() {
-    if (!_form.currentState!.validate()) return;
-    if (!_accepted) {
-      showSnack(context, 'Acceptez les conditions du programme.', error: true);
-      return;
-    }
-    AppScope.read(context).registerCompany(
-      name: _name.text,
-      taxRegistrationNumber: _tax.text,
-      city: _city.text,
-      phone: _phone.text,
-      address: _address.text,
-      email: _email.text,
-      fleetSize: int.tryParse(_fleet.text) ?? 0,
-    );
-    showSnack(context, 'Demande envoyée ✅ L\'équipe Dada va la vérifier.');
-  }
 
   @override
   Widget build(BuildContext context) {
     final company = AppScope.of(context).myCompany;
     return Scaffold(
-      appBar: AppBar(title: const Text('Inscrire mon agence')),
-      body: company != null
-          ? _StatusView(company: company)
-          : _buildForm(context),
-    );
-  }
-
-  Widget _buildForm(BuildContext context) {
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Form(
-      key: _form,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'Recevez des clients grâce aux ambassadeurs Dada.',
-            style: AppTheme.display(fontSize: 20),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Vous ne payez qu\'une commission sur les locations terminées et '
-            'payées. Le client bénéficie de −5 % sur sa première location.',
-            style: TextStyle(color: muted),
-          ),
-          const SizedBox(height: 20),
-          TextFormField(
-            controller: _name,
-            validator: _required,
-            decoration: const InputDecoration(
-              labelText: 'Nom de l\'agence',
-              prefixIcon: Icon(Icons.store_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _tax,
-            validator: _required,
-            decoration: const InputDecoration(
-              labelText: 'Matricule fiscal',
-              prefixIcon: Icon(Icons.badge_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _city,
-            validator: _required,
-            decoration: const InputDecoration(
-              labelText: 'Ville',
-              prefixIcon: Icon(Icons.location_city_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _address,
-            decoration: const InputDecoration(
-              labelText: 'Adresse (optionnel)',
-              prefixIcon: Icon(Icons.place_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _phone,
-            validator: _required,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'Téléphone',
-              prefixText: '+216 ',
-              prefixIcon: Icon(Icons.phone_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'E-mail (optionnel)',
-              prefixIcon: Icon(Icons.mail_outline),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _fleet,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'Nombre de véhicules',
-              prefixIcon: Icon(Icons.directions_car_outlined),
-            ),
-          ),
-          const SizedBox(height: 8),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
-            value: _accepted,
-            onChanged: (v) => setState(() => _accepted = v ?? false),
-            title: const Text(
-              'J\'accepte les règles du programme (commission sur locations '
-              'terminées, remboursement = coins repris).',
-            ),
-          ),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: _submit,
-            child: const Text('Envoyer la demande'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Espace entreprise')),
+      body: company == null
+          ? const _NoCompany()
+          : _CompanyFile(company: company),
     );
   }
 }
 
-class _StatusView extends StatelessWidget {
-  const _StatusView({required this.company});
+class _NoCompany extends StatelessWidget {
+  const _NoCompany();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Image.asset('assets/images/fluent/company.png', height: 110),
+        const SizedBox(height: 16),
+        Text(
+          'Aucune entreprise inscrite',
+          textAlign: TextAlign.center,
+          style: AppTheme.display(fontSize: 22),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Créez un compte entreprise pour publier vos voitures et recevoir '
+          'des clients grâce aux ambassadeurs.',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  const AccountSetupScreen(initialRole: UserRole.companyAdmin),
+            ),
+          ),
+          child: const Text('Créer mon compte entreprise'),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const BusinessGuideScreen(showCta: false),
+            ),
+          ),
+          child: const Text('Lire le guide'),
+        ),
+      ],
+    );
+  }
+}
+
+class _CompanyFile extends StatelessWidget {
+  const _CompanyFile({required this.company});
   final RentalCompany company;
 
   @override
   Widget build(BuildContext context) {
+    final state = AppScope.read(context);
     final approved = company.isApproved;
+    final color = switch (company.status) {
+      CompanyStatus.approved => AppTheme.success,
+      CompanyStatus.rejected || CompanyStatus.suspended => AppTheme.danger,
+      _ => AppTheme.warning,
+    };
+    final message = switch (company.status) {
+      CompanyStatus.draft =>
+        'Il manque des documents. Envoyez-les pour lancer la vérification.',
+      CompanyStatus.pending =>
+        'Dossier complet ✅ L\'équipe Dada vérifie vos informations. Vous serez '
+            'notifié dès la validation.',
+      CompanyStatus.approved =>
+        'Votre agence est visible dans la marketplace. Ajoutez vos voitures '
+            'depuis l\'espace agence (bientôt).',
+      CompanyStatus.rejected =>
+        company.rejectionReason ?? 'Dossier refusé. Contactez l\'équipe Dada.',
+      CompanyStatus.suspended => 'Compte suspendu. Contactez l\'équipe Dada.',
+    };
+
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       children: [
-        Icon(
-          approved ? Icons.verified_rounded : Icons.hourglass_top_rounded,
-          size: 64,
-          color: approved ? AppTheme.success : AppTheme.warning,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          company.name,
-          textAlign: TextAlign.center,
-          style: AppTheme.display(fontSize: 24),
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: StatusPill(
-            label: company.status.label,
-            color: approved ? AppTheme.success : AppTheme.warning,
-          ),
-        ),
-        const SizedBox(height: 24),
-        Card(
-          child: Column(
+        GradientCard(
+          child: Row(
             children: [
-              ListTile(
-                leading: const Icon(Icons.badge_outlined),
-                title: const Text('Matricule fiscal'),
-                subtitle: Text(company.taxRegistrationNumber),
-              ),
-              ListTile(
-                leading: const Icon(Icons.location_city_outlined),
-                title: const Text('Ville'),
-                subtitle: Text(company.city),
-              ),
-              ListTile(
-                leading: const Icon(Icons.phone_outlined),
-                title: const Text('Téléphone'),
-                subtitle: Text(company.phone),
-              ),
-              ListTile(
-                leading: const Icon(Icons.event_outlined),
-                title: const Text('Demande envoyée le'),
-                subtitle: Text(Fmt.longDate(company.createdAt)),
+              Image.asset('assets/images/fluent/company.png', width: 56),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      company.name,
+                      style: AppTheme.display(
+                        fontSize: 22,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text('${company.city} · ${company.fleetSize} voitures'),
+                  ],
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        Text(
-          approved
-              ? 'Ajoutez vos voitures depuis l\'espace agence (bientôt).'
-              : 'Nous vérifions vos informations. Vous serez notifié dès '
-                    'la validation ; vos voitures apparaîtront alors dans la marketplace.',
-          textAlign: TextAlign.center,
+        Row(
+          children: [
+            StatusPill(label: company.status.label, color: color),
+            const Spacer(),
+            Text(
+              'Demande du ${Fmt.longDate(company.createdAt)}',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
         ),
+        const SizedBox(height: 10),
+        Text(message),
+        const SizedBox(height: 20),
+        const SectionTitle('Documents'),
+        Card(
+          child: Column(
+            children: [
+              for (final t in CompanyDocumentType.values)
+                _DocTile(
+                  type: t,
+                  status: company.documentStatus(t),
+                  onSend: () {
+                    state.submitCompanyDocument(t);
+                    showSnack(context, '${t.label} : envoyé ✅');
+                  },
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        const SectionTitle('Informations'),
+        Card(
+          child: Column(
+            children: [
+              _Info(
+                Icons.badge_outlined,
+                'Matricule fiscal',
+                company.taxRegistrationNumber,
+              ),
+              if (company.rneNumber != null && company.rneNumber!.isNotEmpty)
+                _Info(Icons.numbers_rounded, 'RNE', company.rneNumber!),
+              if (company.address != null)
+                _Info(Icons.place_outlined, 'Adresse', company.address!),
+              _Info(Icons.phone_outlined, 'Téléphone', company.phone),
+              if (company.contactName != null)
+                _Info(Icons.person_outline, 'Contact', company.contactName!),
+              _Info(
+                Icons.handshake_outlined,
+                'Accord de commission',
+                company.agreementAcceptedAt == null
+                    ? 'Non accepté'
+                    : 'Accepté le ${Fmt.longDate(company.agreementAcceptedAt!)}',
+              ),
+            ],
+          ),
+        ),
+        if (!approved) ...[
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const BusinessGuideScreen(showCta: false),
+              ),
+            ),
+            icon: const Icon(Icons.menu_book_outlined),
+            label: const Text('Relire le guide entreprise'),
+          ),
+        ],
       ],
     );
   }
+}
+
+class _DocTile extends StatelessWidget {
+  const _DocTile({
+    required this.type,
+    required this.status,
+    required this.onSend,
+  });
+  final CompanyDocumentType type;
+  final DocumentStatus status;
+  final VoidCallback onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    final missing = status == DocumentStatus.missing;
+    return ListTile(
+      leading: Icon(
+        missing ? Icons.description_outlined : Icons.check_circle_rounded,
+        color: switch (status) {
+          DocumentStatus.missing => null,
+          DocumentStatus.rejected => AppTheme.danger,
+          _ => AppTheme.success,
+        },
+      ),
+      title: Text(type.label),
+      subtitle: Text(status.label),
+      trailing: missing
+          ? TextButton(onPressed: onSend, child: const Text('Envoyer'))
+          : null,
+    );
+  }
+}
+
+class _Info extends StatelessWidget {
+  const _Info(this.icon, this.label, this.value);
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) =>
+      ListTile(leading: Icon(icon), title: Text(label), subtitle: Text(value));
 }

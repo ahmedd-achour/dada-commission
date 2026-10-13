@@ -5,7 +5,6 @@ import '../../data/app_state.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
 import '../../widgets/user_sheet.dart';
-import '../wallet/wallet_screen.dart';
 import 'create_post_screen.dart';
 import 'post_card.dart';
 
@@ -23,8 +22,7 @@ class FeedScreen extends StatelessWidget {
         actions: [
           CoinChip(
             coins: state.wallet.balance,
-            onTap: () => Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => const WalletScreen())),
+            onTap: () => AppScope.read(context).setTab(1),
           ),
           const SizedBox(width: 16),
         ],
@@ -86,7 +84,7 @@ class _StoriesRow extends StatelessWidget {
                 name: u.displayName,
                 radius: 23,
                 ring: u.role == UserRole.companyAdmin
-                    ? AppTheme.gold
+                    ? AppTheme.blue
                     : AppTheme.tierColor(u.tier).withValues(alpha: 0.7),
               ),
             ),
@@ -179,7 +177,7 @@ class _Composer extends StatelessWidget {
               ),
               _ComposerAction(
                 icon: Icons.campaign_outlined,
-                color: AppTheme.gold,
+                color: AppTheme.green,
                 label: 'Promo',
                 onTap: () => AppScope.read(context).setTab(1),
               ),
@@ -187,9 +185,7 @@ class _Composer extends StatelessWidget {
                 icon: Icons.toll_outlined,
                 color: scheme.primary,
                 label: 'Mon gain',
-                onTap: () => Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const WalletScreen())),
+                onTap: () => AppScope.read(context).setTab(1),
               ),
             ],
           ),

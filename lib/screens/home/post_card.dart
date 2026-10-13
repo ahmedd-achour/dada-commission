@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../core/constants.dart';
 import '../../core/formatters.dart';
 import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../models/models.dart';
+import '../../services/share_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/user_sheet.dart';
+import 'comments_sheet.dart';
 import 'share_car_screen.dart';
 
 class PostCard extends StatelessWidget {
@@ -48,7 +51,7 @@ class PostCard extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: muted),
             ),
             trailing: post.type == PostType.challenge
-                ? const Icon(Icons.emoji_events_outlined, color: AppTheme.gold)
+                ? const Icon(Icons.emoji_events_outlined, color: AppTheme.green)
                 : null,
             onTap: isMine ? null : () => _openAuthor(context, state),
           ),
@@ -65,7 +68,11 @@ class PostCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  CarImage(label: post.carModel, category: car?.category),
+                  CarImage(
+                    label: post.carModel,
+                    category: car?.category,
+                    imageUrl: car?.imageUrl,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     [
@@ -96,12 +103,15 @@ class PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    '${post.commentCount} commentaires · ${post.shareCount} partages',
-                    textAlign: TextAlign.end,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: muted, fontSize: 13),
+                  child: GestureDetector(
+                    onTap: () => showCommentsSheet(context, post),
+                    child: Text(
+                      '${post.commentCount} commentaires · ${post.shareCount} partages',
+                      textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: muted, fontSize: 13),
+                    ),
                   ),
                 ),
               ],
@@ -119,8 +129,7 @@ class PostCard extends StatelessWidget {
               _Action(
                 icon: Icons.mode_comment_outlined,
                 label: 'Commenter',
-                onTap: () =>
-                    showSnack(context, 'Les commentaires arrivent bientôt.'),
+                onTap: () => showCommentsSheet(context, post),
               ),
               _Action(
                 icon: Icons.share_outlined,
@@ -145,18 +154,90 @@ class PostCard extends StatelessWidget {
   }
 
   /// Sharing always uses the current user's own code, so they earn on it.
+  /// Shared links always carry the current user's code, so they earn on it.
   void _share(BuildContext context, AppState state, Car? car) {
-    state.registerShare(post.id);
-    if (car != null) {
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (_) => ShareCarScreen(car: car)));
-    } else {
-      copyText(
-        context,
-        state.user!.referralLink,
-        message: 'Votre lien de parrainage a été copié.',
-      );
+    final user = state.user!;
+    final link = car == null
+        ? user.referralLink
+        : '${user.referralLink}?car=${car.id}';
+    final text = car == null
+        ? '${post.text}\n\nRejoignez Dada Commission avec mon code '
+              '${user.referralCode} 👉 $link'
+        : '${car.model} à ${Fmt.price(car.pricePerDay)}/jour chez '
+              '${car.companyName}. Réservez avec mon code '
+              '${user.referralCode} : −5 % 👉 $link';
+    const service = ShareService();
+
+    Future<void> go(ShareTarget target) async {
+      Navigator.of(context).pop();
+      state.registerShare(post.id);
+      await service.share(text: text, link: link, target: target);
     }
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Partager',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            if (car != null)
+              ListTile(
+                leading: const Icon(Icons.qr_code_2_rounded),
+                title: const Text('Partager avec mon code et QR'),
+                subtitle: Text(
+                  'Gagnez ${Fmt.percent(user.tier.commissionRate)} '
+                  'de chaque location',
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  state.registerShare(post.id);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => ShareCarScreen(car: car)),
+                  );
+                },
+              ),
+            ListTile(
+              leading: const FaIcon(
+                FontAwesomeIcons.whatsapp,
+                color: AppTheme.whatsapp,
+              ),
+              title: const Text('WhatsApp'),
+              onTap: () => go(ShareTarget.whatsapp),
+            ),
+            ListTile(
+              leading: const FaIcon(
+                FontAwesomeIcons.facebookF,
+                color: AppTheme.facebook,
+              ),
+              title: const Text('Facebook'),
+              onTap: () => go(ShareTarget.facebook),
+            ),
+            ListTile(
+              leading: const Icon(Icons.ios_share_rounded),
+              title: const Text('Autres applications…'),
+              onTap: () => go(ShareTarget.other),
+            ),
+            ListTile(
+              leading: const Icon(Icons.link_rounded),
+              title: const Text('Copier le lien'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                state.registerShare(post.id);
+                copyText(context, link, message: 'Lien copié : $link');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

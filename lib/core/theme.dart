@@ -3,16 +3,34 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/ambassador_tier.dart';
 
-/// Same visual language as the Shnell client: amber seed, Inter body text,
-/// Outfit/Poppins for titles, 16 px rounded surfaces, gold bottom-nav accent.
+/// Samsung-inspired palette (deep "Samsung blue" + fresh green, as on the
+/// boot/loading screen) on top of the Shnell layout language: Inter body
+/// text, Outfit/Poppins titles, 16 px rounded surfaces.
 class AppTheme {
   AppTheme._();
 
   /// Turned off in widget tests (no network to fetch fonts).
   static bool useGoogleFonts = true;
 
-  static const Color gold = Color.fromARGB(255, 187, 152, 48);
-  static const Color navUnselected = Color.fromARGB(255, 160, 160, 158);
+  /// Samsung brand blue.
+  static const Color blue = Color(0xFF1428A0);
+
+  /// Brighter blue used in the middle of the brand gradient.
+  static const Color blueBright = Color(0xFF2F6BFF);
+
+  /// Fresh green of the loading-screen gradient.
+  static const Color green = Color(0xFF14B88A);
+
+  /// Blue -> green brand gradient (headers, wallet card, splash).
+  static const LinearGradient brandGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [blue, blueBright, green],
+  );
+
+  /// Tier colour of the "Or" level (not a brand colour).
+  static const Color gold = Color(0xFFC9A227);
+  static const Color navUnselected = Color(0xFF9AA0AE);
   static const Color success = Color(0xFF2E7D32);
   static const Color danger = Color(0xFFC62828);
   static const Color warning = Color(0xFFEF8F00);
@@ -26,9 +44,14 @@ class AppTheme {
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
+    final dark = brightness == Brightness.dark;
     final scheme = ColorScheme.fromSeed(
-      seedColor: Colors.amber,
+      seedColor: blue,
       brightness: brightness,
+      primary: dark ? const Color(0xFF9DB1FF) : blue,
+      onPrimary: dark ? const Color(0xFF0A1550) : Colors.white,
+      secondary: green,
+      onSecondary: Colors.white,
     );
     final rounded = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(radius),
@@ -80,7 +103,7 @@ class AppTheme {
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
         backgroundColor: scheme.surface,
-        selectedItemColor: gold,
+        selectedItemColor: scheme.primary,
         unselectedItemColor: navUnselected,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
       ),

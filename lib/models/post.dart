@@ -136,7 +136,12 @@ class Post {
     'createdAt': writeDate(createdAt),
   };
 
-  Post copyWith({bool? likedByMe, int? likeCount, int? shareCount}) => Post(
+  Post copyWith({
+    bool? likedByMe,
+    int? likeCount,
+    int? commentCount,
+    int? shareCount,
+  }) => Post(
     id: id,
     authorId: authorId,
     authorName: authorName,
@@ -153,7 +158,7 @@ class Post {
     referralCode: referralCode,
     isSponsored: isSponsored,
     likeCount: likeCount ?? this.likeCount,
-    commentCount: commentCount,
+    commentCount: commentCount ?? this.commentCount,
     shareCount: shareCount ?? this.shareCount,
     createdAt: createdAt,
     likedByMe: likedByMe ?? this.likedByMe,
