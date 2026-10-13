@@ -174,13 +174,13 @@ class _Composer extends StatelessWidget {
               _ComposerAction(
                 icon: Icons.photo_library_outlined,
                 color: Colors.green,
-                label: 'Photo/Vidéo',
+                label: 'Photo',
                 onTap: () => _openComposer(context),
               ),
               _ComposerAction(
                 icon: Icons.campaign_outlined,
                 color: AppTheme.gold,
-                label: 'Promouvoir',
+                label: 'Promo',
                 onTap: () => AppScope.read(context).setTab(1),
               ),
               _ComposerAction(

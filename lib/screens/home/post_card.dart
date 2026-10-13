@@ -179,6 +179,9 @@ class _Action extends StatelessWidget {
     return Expanded(
       child: TextButton.icon(
         onPressed: onTap,
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+        ),
         icon: Icon(icon, size: 20, color: c),
         label: Text(
           label,
