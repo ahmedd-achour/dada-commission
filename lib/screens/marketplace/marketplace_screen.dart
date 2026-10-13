@@ -5,40 +5,244 @@ import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
+import '../business/business_guide_screen.dart';
 import '../company/company_register_screen.dart';
 import '../home/share_car_screen.dart';
+import '../wallet/transfer_screen.dart';
 import '../wallet/wallet_screen.dart';
 
-/// Marketplace: the Dada shop (spend coins) and the cars of every registered
-/// rent-car company (share them to earn coins).
+/// Marketplace: the wallet comes first (balance + every coin action), then
+/// the Dada shop (spend coins) and the cars of every registered rent-car
+/// company (share them to earn coins).
 class MarketplaceScreen extends StatelessWidget {
   const MarketplaceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final state = AppScope.of(context);
+    final scheme = Theme.of(context).colorScheme;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: Text('Marketplace', style: AppTheme.display(fontSize: 22)),
-          actions: [
-            CoinChip(
-              coins: state.wallet.balance,
-              onTap: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const WalletScreen())),
+        ),
+        body: NestedScrollView(
+          headerSliverBuilder: (context, _) => [
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: WalletPanel(),
+              ),
             ),
-            const SizedBox(width: 16),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarHeader(
+                color: scheme.surface,
+                tabBar: const TabBar(
+                  tabs: [
+                    Tab(text: 'Boutique Dada'),
+                    Tab(text: 'Voitures à partager'),
+                  ],
+                ),
+              ),
+            ),
           ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Boutique Dada'),
-              Tab(text: 'Voitures'),
+          body: const TabBarView(children: [_ShopTab(), _CarsTab()]),
+        ),
+      ),
+    );
+  }
+}
+
+class _TabBarHeader extends SliverPersistentHeaderDelegate {
+  _TabBarHeader({required this.tabBar, required this.color});
+  final TabBar tabBar;
+  final Color color;
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlaps) =>
+      ColoredBox(color: color, child: tabBar);
+
+  @override
+  bool shouldRebuild(_TabBarHeader old) =>
+      old.color != color || old.tabBar != tabBar;
+}
+
+/// The wallet, front and centre: balance, pending coins and all coin actions.
+class WalletPanel extends StatelessWidget {
+  const WalletPanel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final user = state.user!;
+    final wallet = state.wallet;
+    final expected = state.expectedCoins;
+
+    return GradientCard(
+      key: const Key('wallet-panel'),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Image.asset('assets/images/fluent/coin.png', width: 28),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Mon portefeuille Dada Coins',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${user.tier.label} · ${Fmt.percent(user.tier.commissionRate)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            Fmt.coins(wallet.balance),
+            style: AppTheme.display(fontSize: 40, color: Colors.white),
+          ),
+          Text(
+            '≈ ${Fmt.dinars(wallet.balanceDt)} en cadeaux · '
+            'en attente ${Fmt.coins(wallet.pendingBalance)}'
+            '${expected > 0 ? ' · à venir ${Fmt.coins(expected)}' : ''}',
+            style: TextStyle(
+              fontSize: 12.5,
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _PanelAction(
+                icon: Icons.send_rounded,
+                label: 'Envoyer',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const TransferScreen()),
+                ),
+              ),
+              _PanelAction(
+                icon: Icons.qr_code_rounded,
+                label: 'Recevoir',
+                onTap: () => showReceiveSheet(context, user),
+              ),
+              _PanelAction(
+                icon: Icons.receipt_long_rounded,
+                label: 'Historique',
+                onTap: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const WalletScreen())),
+              ),
+              _PanelAction(
+                icon: Icons.shopping_bag_outlined,
+                label: 'Commandes',
+                badge: state.redemptions.length,
+                onTap: () => _showOrders(context, state),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOrders(BuildContext context, AppState state) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: state.redemptions.isEmpty
+            ? const EmptyState(
+                icon: Icons.shopping_bag_outlined,
+                message:
+                    'Aucune commande. Échangez vos coins dans la boutique.',
+              )
+            : ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final r in state.redemptions)
+                    ListTile(
+                      leading: const Icon(Icons.card_giftcard_rounded),
+                      title: Text(r.rewardTitle),
+                      subtitle: Text(
+                        '${r.status.label} · ${Fmt.shortDate(r.createdAt)}',
+                      ),
+                      trailing: Text(Fmt.coins(r.coins)),
+                    ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _PanelAction extends StatelessWidget {
+  const _PanelAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.badge = 0,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final int badge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            children: [
+              Badge(
+                isLabelVisible: badge > 0,
+                label: Text('$badge'),
+                backgroundColor: AppTheme.green,
+                child: CircleAvatar(
+                  radius: 21,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  child: Icon(icon, size: 20),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),
-        body: const TabBarView(children: [_ShopTab(), _CarsTab()]),
       ),
     );
   }
@@ -176,14 +380,25 @@ class _RewardCard extends StatelessWidget {
               Container(
                 height: 100,
                 width: double.infinity,
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      scheme.primaryContainer.withValues(alpha: 0.5),
+                      AppTheme.green.withValues(alpha: 0.15),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  rewardIcon(reward.category),
-                  size: 44,
-                  color: scheme.outline,
+                child: AppImage(
+                  reward.imageUrl,
+                  fallback: Icon(
+                    rewardIcon(reward.category),
+                    size: 44,
+                    color: scheme.outline,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -241,7 +456,13 @@ void _showRewardSheet(BuildContext context, Reward reward) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(rewardIcon(reward.category), size: 56),
+            SizedBox(
+              height: 96,
+              child: AppImage(
+                reward.imageUrl,
+                fallback: Icon(rewardIcon(reward.category), size: 56),
+              ),
+            ),
             const SizedBox(height: 12),
             Text(
               reward.title,
@@ -368,7 +589,9 @@ class _CarsTabState extends State<_CarsTab> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => const CompanyRegisterScreen(),
+                  builder: (_) => myCompany == null
+                      ? const BusinessGuideScreen()
+                      : const CompanyRegisterScreen(),
                 ),
               ),
             ),
@@ -404,7 +627,11 @@ class _CarTile extends StatelessWidget {
             children: [
               SizedBox(
                 width: 110,
-                child: CarImage(height: 80, category: car.category),
+                child: CarImage(
+                  height: 80,
+                  category: car.category,
+                  imageUrl: car.imageUrl,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

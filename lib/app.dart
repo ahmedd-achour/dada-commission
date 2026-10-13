@@ -4,6 +4,7 @@ import 'core/theme.dart';
 import 'data/app_state.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/main_shell.dart';
+import 'screens/setup/account_setup_screen.dart';
 
 class DadaApp extends StatefulWidget {
   const DadaApp({super.key, this.state});
@@ -50,7 +51,9 @@ class _AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final signedIn = AppScope.of(context).isSignedIn;
-    return signedIn ? const MainShell() : const SignInScreen();
+    final state = AppScope.of(context);
+    if (!state.isSignedIn) return const SignInScreen();
+    if (state.needsSetup) return const AccountSetupScreen();
+    return const MainShell();
   }
 }

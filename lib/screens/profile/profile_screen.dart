@@ -5,9 +5,9 @@ import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
+import '../business/business_guide_screen.dart';
 import '../company/company_register_screen.dart';
-import '../wallet/transfer_screen.dart';
-import '../wallet/wallet_screen.dart';
+import '../wallet/wallet_screen.dart' show TierProgressCard;
 import 'edit_profile_screen.dart';
 
 /// Profil: identity, code / link / QR, wallet summary and settings.
@@ -148,38 +148,30 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ------------------------------------------------ wallet
-          InkWell(
-            borderRadius: BorderRadius.circular(AppTheme.radius + 4),
-            onTap: () => Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => const WalletScreen())),
-            child: BalanceCard(
-              wallet: state.wallet,
-              expected: state.expectedCoins,
+          // Coin actions live in the Marketplace; this is just a shortcut.
+          Card(
+            child: ListTile(
+              leading: Image.asset('assets/images/fluent/coin.png', width: 36),
+              title: Text(
+                Fmt.coins(state.wallet.balance),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              subtitle: const Text('Mon portefeuille · envoyer, échanger'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.of(context).popUntil((r) => r.isFirst);
+                state.setTab(1);
+              },
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const TransferScreen()),
-                  ),
-                  icon: const Icon(Icons.send_rounded, size: 18),
-                  label: const Text('Envoyer'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => state.setTab(1),
-                  icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-                  label: const Text('Boutique'),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
+          if (user.role == UserRole.companyAdmin) ...[
+            _BusinessCard(company: state.myCompany),
+            const SizedBox(height: 16),
+          ],
           TierProgressCard(user: user),
           const SizedBox(height: 20),
 
@@ -197,14 +189,22 @@ class ProfileScreen extends StatelessWidget {
                 const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: const Icon(Icons.store_mall_directory_outlined),
-                  title: const Text('Inscrire mon agence de location'),
-                  subtitle: state.myCompany == null
-                      ? null
-                      : Text(state.myCompany!.status.label),
+                  title: Text(
+                    state.myCompany == null
+                        ? 'Devenir entreprise partenaire'
+                        : 'Espace entreprise',
+                  ),
+                  subtitle: Text(
+                    state.myCompany == null
+                        ? 'Guide pour les agences de location'
+                        : state.myCompany!.status.label,
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const CompanyRegisterScreen(),
+                      builder: (_) => state.myCompany == null
+                          ? const BusinessGuideScreen()
+                          : const CompanyRegisterScreen(),
                     ),
                   ),
                 ),
@@ -309,6 +309,39 @@ class ProfileScreen extends StatelessWidget {
               '• 10 DC = 1 DT en cadeaux. Les coins expirent après 12 mois.',
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BusinessCard extends StatelessWidget {
+  const _BusinessCard({required this.company});
+  final RentalCompany? company;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = company;
+    final approved = c?.isApproved ?? false;
+    return Card(
+      child: ListTile(
+        leading: Image.asset('assets/images/fluent/company.png', width: 36),
+        title: Text(
+          c?.name ?? 'Mon entreprise',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          c == null
+              ? 'Dossier à compléter'
+              : '${c.status.label} · '
+                    '${c.documents.length}/${CompanyDocumentType.values.length} documents',
+        ),
+        trailing: StatusPill(
+          label: approved ? 'Active' : 'À suivre',
+          color: approved ? AppTheme.success : AppTheme.warning,
+        ),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CompanyRegisterScreen()),
         ),
       ),
     );

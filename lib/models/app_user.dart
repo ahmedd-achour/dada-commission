@@ -63,6 +63,14 @@ class AppUser {
   final bool isIdVerified;
   final bool isBanned;
   final DateTime? birthDate;
+
+  /// Partner venue (hotel, agency…) shown on the QR stand.
+  final String? venueName;
+
+  /// False until the onboarding wizard (account type + profile, and the
+  /// company file for businesses) is finished. The app shows the wizard
+  /// instead of the main tabs until then.
+  final bool setupComplete;
   final DateTime createdAt;
 
   const AppUser({
@@ -83,6 +91,8 @@ class AppUser {
     this.isIdVerified = false,
     this.isBanned = false,
     this.birthDate,
+    this.venueName,
+    this.setupComplete = false,
   });
 
   String get referralLink => '$kReferralBaseUrl$referralCode';
@@ -120,6 +130,8 @@ class AppUser {
     isIdVerified: readBool(json['isIdVerified']),
     isBanned: readBool(json['isBanned']),
     birthDate: readDate(json['birthDate']),
+    venueName: readNullableString(json['venueName']),
+    setupComplete: readBool(json['setupComplete']),
     createdAt: readDate(json['createdAt']) ?? DateTime.now(),
   );
 
@@ -139,6 +151,8 @@ class AppUser {
     'isIdVerified': isIdVerified,
     'isBanned': isBanned,
     'birthDate': writeDate(birthDate),
+    'venueName': venueName,
+    'setupComplete': setupComplete,
     'createdAt': writeDate(createdAt),
   };
 
@@ -154,6 +168,9 @@ class AppUser {
     int? completedRentals3m,
     String? companyId,
     bool? isIdVerified,
+    DateTime? birthDate,
+    String? venueName,
+    bool? setupComplete,
   }) => AppUser(
     id: id,
     displayName: displayName ?? this.displayName,
@@ -170,7 +187,24 @@ class AppUser {
     companyId: companyId ?? this.companyId,
     isIdVerified: isIdVerified ?? this.isIdVerified,
     isBanned: isBanned,
-    birthDate: birthDate,
+    birthDate: birthDate ?? this.birthDate,
+    venueName: venueName ?? this.venueName,
+    setupComplete: setupComplete ?? this.setupComplete,
     createdAt: createdAt,
   );
+
+  /// Age in full years, or null when the birth date is unknown.
+  int? ageOn(DateTime day) {
+    final b = birthDate;
+    return b == null ? null : ageBetween(b, day);
+  }
+
+  /// Age in full years of someone born on [birth], on [day].
+  static int ageBetween(DateTime b, DateTime day) {
+    var age = day.year - b.year;
+    if (day.month < b.month || (day.month == b.month && day.day < b.day)) {
+      age--;
+    }
+    return age;
+  }
 }

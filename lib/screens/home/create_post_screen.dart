@@ -113,7 +113,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
           if (_car != null) ...[
             const SizedBox(height: 12),
-            CarImage(height: 130, label: _car!.model, category: _car!.category),
+            CarImage(
+              height: 130,
+              label: _car!.model,
+              category: _car!.category,
+              imageUrl: _car!.imageUrl,
+            ),
             const SizedBox(height: 8),
             FilledButton.tonal(
               onPressed: null,

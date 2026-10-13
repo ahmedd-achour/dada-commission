@@ -106,6 +106,37 @@ void main() {
       expect(state.redemptions.single.rewardId, 'rw_topup');
     });
 
+    test('comments are added and counted', () {
+      expect(state.commentsFor('p1'), hasLength(2));
+      expect(state.addComment('p1', '   '), isFalse);
+      expect(state.addComment('p1', 'Génial'), isTrue);
+      expect(state.commentsFor('p1').last.text, 'Génial');
+      expect(state.posts.firstWhere((p) => p.id == 'p1').commentCount, 3);
+    });
+
+    test('guest must finish setup before using the app', () {
+      expect(state.needsSetup, isTrue);
+      state.completeSetup(role: UserRole.partner, displayName: 'Hôtel X');
+      expect(state.needsSetup, isFalse);
+      expect(state.user!.role, UserRole.partner);
+    });
+
+    test('company file becomes pending once every document is sent', () {
+      state.registerCompany(
+        name: 'Medina Location',
+        taxRegistrationNumber: '123/A',
+        city: 'Sousse',
+        phone: '22000000',
+        agreementAccepted: true,
+      );
+      expect(state.myCompany!.status, CompanyStatus.draft);
+      for (final t in CompanyDocumentType.values) {
+        state.submitCompanyDocument(t);
+      }
+      expect(state.myCompany!.hasAllDocuments, isTrue);
+      expect(state.myCompany!.status, CompanyStatus.pending);
+    });
+
     test('company registration is pending and hidden from marketplace', () {
       state.registerCompany(
         name: 'Medina Location',
@@ -113,7 +144,7 @@ void main() {
         city: 'Sousse',
         phone: '22000000',
       );
-      expect(state.myCompany!.status, CompanyStatus.pending);
+      expect(state.myCompany!.status, CompanyStatus.draft);
       expect(
         state.approvedCompanies.any((c) => c.name == 'Medina Location'),
         isFalse,

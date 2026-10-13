@@ -44,6 +44,10 @@ class AppState extends ChangeNotifier {
   Challenge? challenge;
   List<AchievementBadge> badges = [];
   List<LeaderboardEntry> leaderboard = [];
+  Map<String, List<Comment>> comments = {};
+
+  /// Signed in but the onboarding wizard is not finished yet.
+  bool get needsSetup => _user != null && !_user!.setupComplete;
 
   // ---------------------------------------------------------------- session
 
@@ -64,6 +68,9 @@ class AppState extends ChangeNotifier {
     challenge = mock.challenge;
     badges = [...mock.badges];
     leaderboard = [...mock.leaderboard];
+    comments = {
+      for (final e in mock.comments.entries) e.key: [...e.value],
+    };
     tabIndex = 0;
     notifyListeners();
   }
@@ -83,6 +90,33 @@ class AppState extends ChangeNotifier {
 
   void toggleTheme() {
     themeMode = themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------------- setup
+
+  /// Finishes the onboarding wizard. For [UserRole.companyAdmin] call
+  /// [registerCompany] first (the wizard does it on its business step).
+  void completeSetup({
+    required UserRole role,
+    required String displayName,
+    String? phone,
+    String? city,
+    DateTime? birthDate,
+    String? venueName,
+  }) {
+    final u = _user;
+    if (u == null) return;
+    _user = u.copyWith(
+      role: role,
+      displayName: displayName.trim(),
+      phone: phone?.trim(),
+      city: city?.trim(),
+      birthDate: birthDate,
+      venueName: venueName?.trim(),
+      setupComplete: true,
+    );
+    tabIndex = 0;
     notifyListeners();
   }
 
@@ -163,6 +197,34 @@ class AppState extends ChangeNotifier {
           p,
     ];
     notifyListeners();
+  }
+
+  List<Comment> commentsFor(String postId) => comments[postId] ?? const [];
+
+  /// Adds a comment and bumps the post's counter. Returns false when empty.
+  bool addComment(String postId, String text) {
+    final u = _user;
+    final body = text.trim();
+    if (u == null || body.isEmpty) return false;
+    final comment = Comment(
+      id: _newId('cm'),
+      postId: postId,
+      authorId: u.id,
+      authorName: u.displayName,
+      authorRole: u.role,
+      text: body,
+      createdAt: _clock(),
+    );
+    comments = {
+      ...comments,
+      postId: [...commentsFor(postId), comment],
+    };
+    posts = [
+      for (final p in posts)
+        if (p.id == postId) p.copyWith(commentCount: p.commentCount + 1) else p,
+    ];
+    notifyListeners();
+    return true;
   }
 
   void registerShare(String postId) {
@@ -299,10 +361,24 @@ class AppState extends ChangeNotifier {
     required String phone,
     String? address,
     String? email,
+    String? contactName,
+    String? rneNumber,
     int fleetSize = 0,
+    Set<CompanyDocumentType> documents = const {},
+    bool agreementAccepted = false,
   }) {
     final u = _user;
     if (u == null) return;
+    final now = _clock();
+    final docs = [
+      for (final t in documents)
+        CompanyDocument(
+          type: t,
+          status: DocumentStatus.submitted,
+          submittedAt: now,
+        ),
+    ];
+    final complete = documents.length == CompanyDocumentType.values.length;
     final company = RentalCompany(
       id: _newId('c'),
       name: name.trim(),
@@ -312,11 +388,59 @@ class AppState extends ChangeNotifier {
       address: address?.trim(),
       email: email?.trim(),
       taxRegistrationNumber: taxRegistrationNumber.trim(),
+      contactName: contactName?.trim(),
+      rneNumber: rneNumber?.trim(),
       fleetSize: fleetSize,
-      createdAt: _clock(),
+      documents: docs,
+      agreementAcceptedAt: agreementAccepted ? now : null,
+      status: complete && agreementAccepted
+          ? CompanyStatus.pending
+          : CompanyStatus.draft,
+      createdAt: now,
     );
-    companies = [...companies, company];
+    companies = [...companies.where((c) => c.ownerUid != u.id), company];
     _user = u.copyWith(companyId: company.id);
+    notifyListeners();
+  }
+
+  /// Marks one more paper as sent; the file is pending once all are in.
+  void submitCompanyDocument(CompanyDocumentType type) {
+    final c = myCompany;
+    if (c == null) return;
+    final now = _clock();
+    final docs = [
+      ...c.documents.where((d) => d.type != type),
+      CompanyDocument(
+        type: type,
+        status: DocumentStatus.submitted,
+        submittedAt: now,
+      ),
+    ];
+    final complete = CompanyDocumentType.values.every(
+      (t) => docs.any((d) => d.type == t),
+    );
+    final updated = RentalCompany(
+      id: c.id,
+      name: c.name,
+      ownerUid: c.ownerUid,
+      city: c.city,
+      phone: c.phone,
+      taxRegistrationNumber: c.taxRegistrationNumber,
+      createdAt: c.createdAt,
+      logoUrl: c.logoUrl,
+      address: c.address,
+      email: c.email,
+      contactName: c.contactName,
+      rneNumber: c.rneNumber,
+      fleetSize: c.fleetSize,
+      customerDiscountRate: c.customerDiscountRate,
+      documents: docs,
+      agreementAcceptedAt: c.agreementAcceptedAt,
+      status: complete && c.agreementAcceptedAt != null
+          ? CompanyStatus.pending
+          : c.status,
+    );
+    companies = [for (final x in companies) x.id == c.id ? updated : x];
     notifyListeners();
   }
 }

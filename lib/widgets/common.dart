@@ -217,12 +217,44 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-/// Grey box with a car icon until real photos are uploaded.
+/// Image from the app bundle (`assets/...`) or the network (`https://...`,
+/// e.g. Firebase Storage). Shows [fallback] while loading or on error.
+class AppImage extends StatelessWidget {
+  const AppImage(
+    this.source, {
+    super.key,
+    required this.fallback,
+    this.fit = BoxFit.contain,
+  });
+
+  final String? source;
+  final Widget fallback;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    final src = source;
+    if (src == null || src.isEmpty) return fallback;
+    Widget onError(BuildContext _, Object _, StackTrace? _) => fallback;
+    return src.startsWith('http')
+        ? Image.network(src, fit: fit, errorBuilder: onError)
+        : Image.asset(src, fit: fit, errorBuilder: onError);
+  }
+}
+
+/// Car picture on a soft brand-tinted card (icon fallback).
 class CarImage extends StatelessWidget {
-  const CarImage({super.key, this.height = 170, this.label, this.category});
+  const CarImage({
+    super.key,
+    this.height = 170,
+    this.label,
+    this.category,
+    this.imageUrl,
+  });
   final double height;
   final String? label;
   final CarCategory? category;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -236,19 +268,78 @@ class CarImage extends StatelessWidget {
     return Container(
       height: height,
       width: double.infinity,
+      padding: EdgeInsets.all(height * 0.1),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            scheme.primaryContainer.withValues(alpha: 0.55),
+            AppTheme.green.withValues(alpha: 0.18),
+          ],
+        ),
         borderRadius: BorderRadius.circular(AppTheme.radius),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: height * 0.38, color: scheme.outline),
+          Expanded(
+            child: AppImage(
+              imageUrl,
+              fallback: FittedBox(
+                child: Icon(icon, size: height * 0.38, color: scheme.outline),
+              ),
+            ),
+          ),
           if (label != null) ...[
-            const SizedBox(height: 6),
-            Text(label!, style: TextStyle(color: scheme.outline)),
+            const SizedBox(height: 4),
+            Text(
+              label!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Blue -> green brand card (wallet, setup header).
+class GradientCard extends StatelessWidget {
+  const GradientCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(20),
+  });
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        gradient: AppTheme.brandGradient,
+        borderRadius: BorderRadius.circular(AppTheme.radius + 6),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.blue.withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(color: Colors.white),
+        child: IconTheme.merge(
+          data: const IconThemeData(color: Colors.white),
+          child: child,
+        ),
       ),
     );
   }

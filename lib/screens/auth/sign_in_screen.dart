@@ -34,109 +34,119 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final muted = scheme.onSurface.withValues(alpha: 0.55);
+    final muted = Colors.white.withValues(alpha: 0.8);
 
+    // Full-bleed blue -> green "loading screen" look.
     return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Spacer(),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Dada.',
-                      style: AppTheme.display(
-                        fontSize: 52,
-                        color: scheme.primary,
-                      ),
-                    ),
-                    Text(
-                      'Commission',
-                      style: AppTheme.display(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Partagez une voiture, gagnez des Dada Coins, '
-                      'échangez-les contre des cadeaux.',
-                      style: AppTheme.body(fontSize: 15, color: muted),
-                    ),
-                    const SizedBox(height: 40),
-                    _ProviderButton(
-                      label: 'Continuer avec Facebook',
-                      icon: FontAwesomeIcons.facebookF,
-                      background: AppTheme.facebook,
-                      foreground: Colors.white,
-                      onPressed: _busy
-                          ? null
-                          : () => _run(_auth.signInWithFacebook),
-                    ),
-                    const SizedBox(height: 12),
-                    _ProviderButton(
-                      label: 'Continuer avec Google',
-                      icon: FontAwesomeIcons.google,
-                      background: scheme.surfaceContainerHighest,
-                      foreground: scheme.onSurface,
-                      onPressed: _busy
-                          ? null
-                          : () => _run(_auth.signInWithGoogle),
-                    ),
-                    const SizedBox(height: 12),
-                    _ProviderButton(
-                      label: 'Continuer avec WhatsApp',
-                      icon: FontAwesomeIcons.whatsapp,
-                      background: AppTheme.whatsapp,
-                      foreground: Colors.white,
-                      onPressed: _busy
-                          ? null
-                          : () => _run(_auth.signInWithWhatsApp),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        const Expanded(child: Divider()),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text('ou', style: TextStyle(color: muted)),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppTheme.brandGradient),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Spacer(),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Dada.',
+                        style: AppTheme.display(
+                          fontSize: 52,
+                          color: Colors.white,
                         ),
-                        const Expanded(child: Divider()),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    OutlinedButton.icon(
-                      key: const Key('guest-sign-in'),
-                      onPressed: _busy
-                          ? null
-                          : () => AppScope.read(context).signInAsGuest(),
-                      icon: const Icon(Icons.person_outline),
-                      label: const Text('Continuer en tant qu\'invité'),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Mode démo avec des données fictives.',
-                      textAlign: TextAlign.center,
-                      style: AppTheme.body(fontSize: 12, color: muted),
-                    ),
-                    const Spacer(),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Dès 18 ans. En continuant, vous acceptez les règles du '
-                      'programme et notre politique de confidentialité.',
-                      textAlign: TextAlign.center,
-                      style: AppTheme.body(fontSize: 12, color: muted),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                      ),
+                      Text(
+                        'Commission',
+                        style: AppTheme.display(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Partagez une voiture, gagnez des Dada Coins, '
+                        'échangez-les contre des cadeaux.',
+                        style: AppTheme.body(fontSize: 15, color: muted),
+                      ),
+                      const SizedBox(height: 40),
+                      _ProviderButton(
+                        label: 'Continuer avec Facebook',
+                        icon: FontAwesomeIcons.facebookF,
+                        background: AppTheme.facebook,
+                        foreground: Colors.white,
+                        onPressed: _busy
+                            ? null
+                            : () => _run(_auth.signInWithFacebook),
+                      ),
+                      const SizedBox(height: 12),
+                      _ProviderButton(
+                        label: 'Continuer avec Google',
+                        icon: FontAwesomeIcons.google,
+                        background: Colors.white,
+                        foreground: const Color(0xFF1F1F1F),
+                        onPressed: _busy
+                            ? null
+                            : () => _run(_auth.signInWithGoogle),
+                      ),
+                      const SizedBox(height: 12),
+                      _ProviderButton(
+                        label: 'Continuer avec WhatsApp',
+                        icon: FontAwesomeIcons.whatsapp,
+                        background: AppTheme.whatsapp,
+                        foreground: Colors.white,
+                        onPressed: _busy
+                            ? null
+                            : () => _run(_auth.signInWithWhatsApp),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: muted)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('ou', style: TextStyle(color: muted)),
+                          ),
+                          Expanded(child: Divider(color: muted)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(
+                            color: Colors.white,
+                            width: 1.5,
+                          ),
+                        ),
+                        key: const Key('guest-sign-in'),
+                        onPressed: _busy
+                            ? null
+                            : () => AppScope.read(context).signInAsGuest(),
+                        icon: const Icon(Icons.person_outline),
+                        label: const Text('Continuer en tant qu\'invité'),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Mode démo avec des données fictives.',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.body(fontSize: 12, color: muted),
+                      ),
+                      const Spacer(),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Dès 18 ans. En continuant, vous acceptez les règles du '
+                        'programme et notre politique de confidentialité.',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.body(fontSize: 12, color: muted),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -5,6 +5,7 @@ import '../../core/formatters.dart';
 import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../models/models.dart';
+import '../../services/share_service.dart';
 import '../../widgets/common.dart';
 import 'create_post_screen.dart';
 
@@ -40,7 +41,11 @@ class ShareCarScreen extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 130,
-                    child: CarImage(height: 90, category: car.category),
+                    child: CarImage(
+                      height: 90,
+                      category: car.category,
+                      imageUrl: car.imageUrl,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -118,10 +123,34 @@ class ShareCarScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _ShareTarget('TikTok', FontAwesomeIcons.tiktok, caption),
-              _ShareTarget('Instagram', FontAwesomeIcons.instagram, caption),
-              _ShareTarget('WhatsApp', FontAwesomeIcons.whatsapp, caption),
-              _ShareTarget('Facebook', FontAwesomeIcons.facebookF, caption),
+              _ShareTarget(
+                'TikTok',
+                FontAwesomeIcons.tiktok,
+                caption,
+                link,
+                ShareTarget.tiktok,
+              ),
+              _ShareTarget(
+                'Instagram',
+                FontAwesomeIcons.instagram,
+                caption,
+                link,
+                ShareTarget.instagram,
+              ),
+              _ShareTarget(
+                'WhatsApp',
+                FontAwesomeIcons.whatsapp,
+                caption,
+                link,
+                ShareTarget.whatsapp,
+              ),
+              _ShareTarget(
+                'Facebook',
+                FontAwesomeIcons.facebookF,
+                caption,
+                link,
+                ShareTarget.facebook,
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -166,21 +195,40 @@ class ShareCarScreen extends StatelessWidget {
 }
 
 class _ShareTarget extends StatelessWidget {
-  const _ShareTarget(this.label, this.icon, this.caption);
+  const _ShareTarget(
+    this.label,
+    this.icon,
+    this.caption,
+    this.link,
+    this.target,
+  );
   final String label;
   final FaIconData icon;
   final String caption;
+  final String link;
+  final ShareTarget target;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => copyText(
-        context,
-        caption,
-        message: 'Texte copié : collez-le dans $label.',
-      ),
+      onTap: () async {
+        // TikTok / Instagram open through the share sheet; copy the caption
+        // too so it can be pasted under a video.
+        if (target == ShareTarget.tiktok || target == ShareTarget.instagram) {
+          await copyText(
+            context,
+            caption,
+            message: 'Légende copiée : collez-la sous votre vidéo $label.',
+          );
+        }
+        await const ShareService().share(
+          text: caption,
+          link: link,
+          target: target,
+        );
+      },
       child: Padding(
         padding: const EdgeInsets.all(6),
         child: Column(
