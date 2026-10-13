@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "186980750939",
+    "project_id": "dada-commission",
+    "storage_bucket": "dada-commission.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186980750939:android:cf33d134ce6398068c517e",
+        "android_client_info": {
+          "package_name": "com.dada.commission"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBd5u8lN0_Q0BNlfCBhsOYjx1OTHtOvNVk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
