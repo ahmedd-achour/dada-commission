@@ -7,9 +7,17 @@ Other rent-car companies can register and get customers through ambassadors.
 
 The full concept is in `assets/Le concept.pdf`.
 
+**Documentation (in French)**
+- `docs/Guide-Dada-Commission.pdf`: short illustrated guide for non-technical
+  readers (source: `docs/guide/guide.html`)
+- `docs/conception-base-de-donnees.md`: database design (collections, fields,
+  Cloud Functions, draft security rules, key flows)
+
 ## Status
 
 - The UI is done and runs in **guest mode** on mock data (`lib/data/mock_data.dart`).
+- After sign-in, an **account setup** wizard is required: ambassador, partner
+  venue, or rent-car company (company file, documents, commission agreement).
 - Sign-in with Facebook, Google and WhatsApp is stubbed in
   `lib/services/auth_service.dart`. The buttons show a "bientôt disponible" message.
 - The models are ready for Firestore (`fromJson` / `toJson`).
@@ -26,19 +34,23 @@ lib/
   services/auth_service.dart
   screens/
     auth/                   sign-in (Facebook, Google, WhatsApp, guest)
+    setup/                  required account-setup wizard
+    business/               business guide (how to join as a company)
     main_shell.dart         bottom nav: Accueil · Marketplace · Activité · Profil
     home/                   feed, post card, create post, share a car
-    marketplace/            Dada shop + cars of every registered company
+    marketplace/            wallet panel + Dada shop + cars of every company
     activity/               my clients, challenges, badges, leaderboard
     profile/                profile, code/link/QR, settings, edit profile
     wallet/                 wallet + history, send coins
-    company/                rent-car company registration
+    company/                company space (file status, documents)
   widgets/                  shared UI pieces
 ```
 
-The look matches `shnell_android_ios_client`: Material 3 with an amber seed
-color, Inter body text, Outfit and Poppins for titles, 16 px rounded corners and
-a gold bottom-nav accent.
+Colours: Samsung blue (`#1428A0`) and a fresh green (`#14B88A`), with a
+blue-to-green gradient for the sign-in screen and wallet cards. Layout follows
+`shnell_android_ios_client` (Material 3, Inter body text, Outfit and Poppins
+titles, 16 px rounded corners). Marketplace images are Microsoft Fluent Emoji 3D
+(MIT, see `assets/images/fluent/CREDITS.md`).
 
 ## Data model (Firestore)
 
@@ -48,7 +60,7 @@ a gold bottom-nav accent.
 | `referralCodes/{code}` | n/a | `{uid}`, guarantees each code is unique |
 | `companies/{id}` | `RentalCompany` | `pending` until the Dada team approves it |
 | `cars/{id}` | `Car` | Belongs to a company |
-| `posts/{id}` | `Post` | Feed. Likes and comments go in subcollections |
+| `posts/{id}` | `Post` | Feed. Likes and comments (`Comment`) go in subcollections |
 | `referrals/{id}` | `Referral` | A rental booked with a code, link or QR. Server-written |
 | `wallets/{uid}` | `Wallet` | Read-only for clients |
 | `wallets/{uid}/transactions/{id}` | `CoinTransaction` | Append-only ledger |

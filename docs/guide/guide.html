@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Dada Commission — Le guide en images</title>
+<style>
+  @page { size: A4; margin: 0; }
+  :root {
+    --blue: #1428A0; --blue2: #2F6BFF; --green: #14B88A;
+    --ink: #14182B; --muted: #5B6276; --soft: #EEF3FF; --soft2: #E8FBF4;
+    --line: #DCE3F5; --gold: #C9A227;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: Inter, "DejaVu Sans", sans-serif; color: var(--ink);
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; height: 297mm; padding: 16mm 15mm 14mm; position: relative;
+          overflow: hidden; page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .grad { background: linear-gradient(135deg, var(--blue) 0%, var(--blue2) 50%, var(--green) 100%); }
+  h1 { font-family: "Inter Display", Inter, sans-serif; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+  h2 { font-family: "Inter Display", Inter, sans-serif; font-size: 27px; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .kicker { color: var(--green); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  .lead { color: var(--muted); font-size: 14.5px; margin: 6px 0 16px; line-height: 1.45; }
+  p { line-height: 1.45; font-size: 13.5px; margin: 0; }
+  .z { }
+  .num { position: absolute; bottom: 9mm; right: 15mm; font-size: 11px; color: var(--muted); }
+  .brand { position: absolute; bottom: 9mm; left: 15mm; font-size: 11px; color: var(--muted); font-weight: 600; }
+  .card { background: #fff; border: 1.5px solid var(--line); border-radius: 18px; padding: 14px; }
+  .soft { background: var(--soft); border-radius: 18px; padding: 14px; }
+  .soft2 { background: var(--soft2); border-radius: 18px; padding: 14px; }
+  .row { display: flex; gap: 12px; }
+  .col { flex: 1; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11.5px; font-weight: 700; }
+  .pill.b { background: var(--soft); color: var(--blue); }
+  .pill.g { background: var(--soft2); color: #0B7E5E; }
+  .big { font-family: "Inter Display", Inter; font-weight: 800; }
+  img.ic { width: 54px; height: 54px; }
+  .tag { font-size: 12px; color: var(--muted); }
+
+  /* cover */
+  .cover { color: #fff; display: flex; flex-direction: column; }
+  .cover h1 { font-size: 60px; line-height: 1; }
+  .cover .sub { font-size: 22px; font-weight: 600; opacity: .95; margin-top: 10px; }
+  .cover .tagline { margin-top: 26px; font-size: 18px; line-height: 1.5; opacity: .95; }
+  .bubble { background: rgba(255,255,255,.16); border: 1.5px solid rgba(255,255,255,.35);
+            border-radius: 18px; padding: 12px 16px; font-size: 14px; }
+
+  /* comic */
+  .comic { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel { border: 2px solid var(--ink); border-radius: 16px; padding: 10px 12px 12px; position: relative; background: #fff; }
+  .panel .n { position: absolute; top: -12px; left: 12px; width: 26px; height: 26px; border-radius: 50%;
+              background: var(--blue); color: #fff; font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+  .panel .cap { font-size: 13px; margin-top: 6px; line-height: 1.4; }
+  .panel svg { width: 100%; height: 150px; display: block; }
+
+  /* steps */
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; }
+  .dot { flex: none; width: 30px; height: 30px; border-radius: 50%; color: #fff; font-weight: 800;
+         display: grid; place-items: center; font-size: 14px; }
+  .step b { display: block; font-size: 14px; margin-bottom: 1px; }
+  .step span { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+  /* phones */
+  .phone { width: 150px; height: 290px; border: 3px solid var(--ink); border-radius: 26px; padding: 14px 10px;
+           background: #fff; position: relative; font-size: 10px; }
+  .phone::before { content: ""; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; border-radius: 4px;
+                   background: var(--ink); transform: translateX(-50%); }
+  .phone .t { font-weight: 800; font-size: 12px; margin: 6px 0 8px; }
+  .opt { border: 1.5px solid var(--line); border-radius: 10px; padding: 6px; margin-bottom: 6px; display: flex; gap: 6px; align-items: center; }
+  .opt.on { border-color: var(--blue); background: var(--soft); }
+  .opt img { width: 24px; height: 24px; }
+  .field { background: #F1F3F8; border-radius: 8px; padding: 6px 7px; margin-bottom: 6px; color: var(--muted); }
+  .btn { position: absolute; left: 10px; right: 10px; bottom: 14px; background: var(--blue); color: #fff; text-align: center;
+         border-radius: 10px; padding: 7px; font-weight: 700; }
+  .arrow { font-size: 30px; color: var(--green); font-weight: 800; align-self: center; }
+
+  /* stairs */
+  .stairs { display: flex; align-items: flex-end; gap: 10px; height: 170px; }
+  .stair { flex: 1; border-radius: 14px 14px 6px 6px; padding: 10px; color: #fff; }
+  .stair .p { font-size: 26px; font-weight: 800; font-family: "Inter Display", Inter; }
+
+  /* timeline */
+  .tl { display: flex; align-items: center; gap: 6px; }
+  .tl .box { flex: 1; text-align: center; border-radius: 14px; padding: 10px 6px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--line); background:#fff; }
+  .tl .box img { width: 34px; height: 34px; display: block; margin: 0 auto 4px; }
+  .tl .to { color: var(--green); font-weight: 800; }
+
+  /* drawers */
+  .drawers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .drawer { border: 2px solid var(--ink); border-radius: 12px; padding: 10px; background: #fff; position: relative; min-height: 96px; }
+  .drawer::after { content: ""; position: absolute; left: 50%; bottom: 8px; width: 34px; height: 6px; border-radius: 6px; background: var(--ink); transform: translateX(-50%); }
+  .drawer b { display: block; font-size: 13.5px; }
+  .drawer span { font-size: 11.5px; color: var(--muted); line-height: 1.35; display: block; margin-bottom: 14px; }
+  .lock { font-size: 11px; font-weight: 700; color: var(--blue); }
+
+  ul.clean { margin: 6px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.55; }
+  .ticket { border: 2px dashed var(--blue); border-radius: 16px; padding: 12px 14px; background: #fff; }
+  .ticket .l { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+  .ticket .tot { border-top: 1.5px solid var(--line); margin-top: 4px; padding-top: 6px; font-weight: 800; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- simple person: head + body, colour via currentColor -->
+    <symbol id="person" viewBox="0 0 60 100">
+      <circle cx="30" cy="20" r="14" fill="#FFE1C7" stroke="#14182B" stroke-width="2.5"/>
+      <path d="M17 17 q13 -16 26 0" fill="#14182B"/>
+      <path d="M8 98 v-30 q0 -22 22 -22 q22 0 22 22 v30 z" fill="currentColor" stroke="#14182B" stroke-width="2.5"/>
+      <circle cx="25" cy="21" r="1.8" fill="#14182B"/><circle cx="35" cy="21" r="1.8" fill="#14182B"/>
+      <path d="M25 27 q5 4 10 0" stroke="#14182B" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="phone" viewBox="0 0 40 70">
+      <rect x="2" y="2" width="36" height="66" rx="7" fill="#fff" stroke="#14182B" stroke-width="2.5"/>
+      <rect x="7" y="10" width="26" height="40" rx="3" fill="#EEF3FF"/>
+      <circle cx="20" cy="59" r="3" fill="#14182B"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============================== 1. COUVERTURE -->
+<section class="page grad cover">
+  <div style="font-weight:700;letter-spacing:.14em;font-size:13px;opacity:.9">LE GUIDE EN IMAGES</div>
+  <div style="margin-top:40mm">
+    <h1>Dada<br>Commission</h1>
+    <div class="sub">Le hub des commissionnaires de la location de voitures</div>
+    <div class="tagline">Vous partagez une voiture.<br>Quelqu'un la loue grâce à vous.<br><b>Vous gagnez des Dada Coins.</b></div>
+  </div>
+  <div style="display:flex;justify-content:center;gap:18px;margin-top:22mm;align-items:flex-end">
+    <img src="../../assets/images/fluent/car_citadine.png" style="width:140px">
+    <img src="../../assets/images/fluent/coin.png" style="width:96px">
+    <img src="../../assets/images/fluent/gift.png" style="width:110px">
+  </div>
+  <div style="margin-top:auto" class="row">
+    <div class="bubble col">👥 <b>Pour qui ?</b> Ambassadeurs, partenaires (hôtels, agences) et entreprises de location.</div>
+    <div class="bubble col">⏱️ <b>Lecture :</b> 5 minutes. Aucune connaissance technique nécessaire.</div>
+  </div>
+</section>
+
+<!-- ============================== 2. L'IDÉE -->
+<section class="page">
+  <div class="z" style="zoom:1.28">
+  <div class="kicker">L'idée en 1 minute</div>
+  <h2>Une location de plus, sans publicité à payer</h2>
+  <p class="lead">Les agences de location ont des voitures libres. Les gens ont des amis, des abonnés, des clients.
+  Dada Commission relie les deux : chacun peut devenir le « commercial » d'une agence et être récompensé.</p>
+
+  <div class="comic">
+    <div class="panel"><div class="n">1</div>
+      <svg viewBox="0 0 300 150">
+        <use href="#person" x="40" y="30" width="70" height="115" color="#2F6BFF"/>
+        <use href="#phone" x="120" y="55" width="40" height="70"/>
+        <rect x="170" y="30" width="110" height="34" rx="17" fill="#EEF3FF" stroke="#1428A0" stroke-width="2"/>
+        <text x="225" y="52" text-anchor="middle" font-size="15" font-weight="800" fill="#1428A0">YASMINE20</text>
+        <path d="M168 95 q30 -10 40 10" stroke="#14B88A" stroke-width="3" fill="none" stroke-dasharray="5 5"/>
+        <text x="190" y="128" font-size="13" fill="#5B6276">TikTok · WhatsApp</text>
+      </svg>
+      <div class="cap"><b>Yasmine partage</b> une voiture avec son code, son lien ou son QR code.</div>
+    </div>
+    <div class="panel"><div class="n">2</div>
+      <svg viewBox="0 0 300 150">
+        <use href="#person" x="30" y="30" width="70" height="115" color="#14B88A"/>
+        <image href="../../assets/images/fluent/car_citadine.png" x="120" y="35" width="110" height="110"/>
+        <circle cx="255" cy="45" r="28" fill="#E8FBF4" stroke="#14B88A" stroke-width="2.5"/>
+        <text x="255" y="51" text-anchor="middle" font-size="17" font-weight="800" fill="#0B7E5E">−5 %</text>
+      </svg>
+      <div class="cap"><b>Sami réserve</b> avec le code et paie <b>5 % moins cher</b> sa première location.</div>
+    </div>
+    <div class="panel"><div class="n">3</div>
+      <svg viewBox="0 0 300 150">
+        <image href="../../assets/images/fluent/company.png" x="30" y="25" width="110" height="110"/>
+        <rect x="160" y="45" width="120" height="60" rx="14" fill="#EEF3FF" stroke="#1428A0" stroke-width="2"/>
+        <text x="220" y="72" text-anchor="middle" font-size="14" font-weight="800" fill="#1428A0">+1 location</text>
+        <text x="220" y="92" text-anchor="middle" font-size="12" fill="#5B6276">sans pub payée</text>
+      </svg>
+      <div class="cap"><b>L'agence</b> loue une voiture de plus. Elle ne paie que si la location est terminée et payée.</div>
+    </div>
+    <div class="panel"><div class="n">4</div>
+      <svg viewBox="0 0 300 150">
+        <use href="#person" x="30" y="30" width="70" height="115" color="#2F6BFF"/>
+        <image href="../../assets/images/fluent/coin.png" x="115" y="40" width="70" height="70"/>
+        <text x="200" y="70" font-size="26" font-weight="800" fill="#14B88A">+684</text>
+        <text x="200" y="92" font-size="13" fill="#5B6276">Dada Coins</text>
+      </svg>
+      <div class="cap"><b>Yasmine reçoit des Dada Coins</b> 7 jours après le retour de la voiture.</div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="soft2 col"><b>Le client</b><p>−5 % sur sa première location.</p></div>
+    <div class="soft col"><b>L'agence</b><p>Des clients en plus, payés seulement au résultat.</p></div>
+    <div class="soft2 col"><b>L'ambassadeur</b><p>8 à 20 % de la location, en cadeaux.</p></div>
+  </div>
+  </div>
+  <div class="brand">Dada Commission</div><div class="num">2</div>
+</section>
+
+<!-- ============================== 3. QUI FAIT QUOI -->
+<section class="page">
+  <div class="z" style="zoom:1.27">
+  <div class="kicker">Les comptes</div>
+  <h2>Qui fait quoi ?</h2>
+  <p class="lead">À la création du compte, on choisit l'un de ces trois profils. L'équipe Dada veille sur le tout.</p>
+
+  <svg viewBox="0 0 600 250" style="width:100%;height:auto">
+    <rect x="235" y="80" width="130" height="90" rx="18" fill="#1428A0"/>
+    <use href="#phone" x="282" y="92" width="36" height="62"/>
+    <text x="300" y="185" text-anchor="middle" font-size="14" font-weight="800" fill="#1428A0">L'application</text>
+    <g font-size="13" font-weight="700">
+      <rect x="10" y="10" width="170" height="60" rx="14" fill="#EEF3FF" stroke="#2F6BFF" stroke-width="2"/>
+      <text x="95" y="36" text-anchor="middle" fill="#1428A0">Ambassadeur</text>
+      <text x="95" y="55" text-anchor="middle" font-weight="400" fill="#5B6276" font-size="11.5">partage, gagne des coins</text>
+      <rect x="10" y="180" width="170" height="60" rx="14" fill="#E8FBF4" stroke="#14B88A" stroke-width="2"/>
+      <text x="95" y="206" text-anchor="middle" fill="#0B7E5E">Partenaire</text>
+      <text x="95" y="225" text-anchor="middle" font-weight="400" fill="#5B6276" font-size="11.5">QR code à l'accueil</text>
+      <rect x="420" y="10" width="170" height="60" rx="14" fill="#EEF3FF" stroke="#2F6BFF" stroke-width="2"/>
+      <text x="505" y="36" text-anchor="middle" fill="#1428A0">Entreprise de location</text>
+      <text x="505" y="55" text-anchor="middle" font-weight="400" fill="#5B6276" font-size="11.5">publie ses voitures</text>
+      <rect x="420" y="180" width="170" height="60" rx="14" fill="#F6F0DC" stroke="#C9A227" stroke-width="2"/>
+      <text x="505" y="206" text-anchor="middle" fill="#7A5F00">Équipe Dada</text>
+      <text x="505" y="225" text-anchor="middle" font-weight="400" fill="#5B6276" font-size="11.5">valide, envoie les cadeaux</text>
+    </g>
+    <g stroke="#14B88A" stroke-width="3" fill="none" stroke-dasharray="6 6">
+      <path d="M180 40 Q215 50 235 95"/><path d="M180 210 Q215 200 235 155"/>
+      <path d="M420 40 Q385 50 365 95"/><path d="M420 210 Q385 200 365 155"/>
+    </g>
+  </svg>
+
+  <div class="row" style="margin-top:12px">
+    <div class="card col">
+      <img class="ic" src="../../assets/images/fluent/money_bag.png">
+      <b style="display:block;margin:6px 0 4px">Ambassadeur</b>
+      <p>Étudiant, créatrice TikTok, chauffeur… dès <b>18 ans</b>. Partage un code, un lien ou un QR et gagne sur chaque location.</p>
+    </div>
+    <div class="card col">
+      <img class="ic" src="../../assets/images/fluent/gift.png">
+      <b style="display:block;margin:6px 0 4px">Partenaire</b>
+      <p>Hôtel, agence de voyage, commerce. Pose un <b>QR code</b> à l'accueil : ses clients réservent, il gagne des coins.</p>
+    </div>
+    <div class="card col">
+      <img class="ic" src="../../assets/images/fluent/company.png">
+      <b style="display:block;margin:6px 0 4px">Entreprise de location</b>
+      <p>Rejoint le hub, publie ses voitures, paie une <b>commission au résultat</b>. Dada Rent Car en fait partie.</p>
+    </div>
+  </div>
+  <div class="soft" style="margin-top:12px"><b>Bon à savoir :</b> l'application ressemble à Facebook (fil d'actualité, j'aime, commentaires, partage)
+  avec 4 onglets : <b>Accueil · Marketplace · Activité · Profil</b>. Le portefeuille de coins est en haut de la Marketplace.</div>
+  </div>
+  <div class="brand">Dada Commission</div><div class="num">3</div>
+</section>
+
+<!-- ============================== 4. CRÉER SON COMPTE -->
+<section class="page">
+  <div class="z" style="zoom:1.3">
+  <div class="kicker">Inscription</div>
+  <h2>Créer son compte en 3 écrans</h2>
+  <p class="lead">On se connecte avec <b>Facebook</b>, <b>Google</b> ou <b>WhatsApp</b> — pas de mot de passe à retenir.
+  Puis un petit assistant demande l'essentiel. Impossible d'utiliser l'application avant de l'avoir terminé.</p>
+
+  <div style="display:flex;justify-content:center;gap:10px;align-items:center">
+    <div class="phone">
+      <div class="t">Quel compte ?</div>
+      <div class="opt on"><img src="../../assets/images/fluent/money_bag.png">Ambassadeur</div>
+      <div class="opt"><img src="../../assets/images/fluent/gift.png">Partenaire</div>
+      <div class="opt"><img src="../../assets/images/fluent/company.png">Entreprise</div>
+      <div class="btn">Continuer</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="phone">
+      <div class="t">Mon profil</div>
+      <div class="field">Nom complet</div>
+      <div class="field">Téléphone</div>
+      <div class="field">Ville</div>
+      <div class="field">Date de naissance</div>
+      <div class="btn">Continuer</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="phone">
+      <div class="t">Les règles</div>
+      <div class="field" style="background:linear-gradient(135deg,#1428A0,#14B88A);color:#fff">8 à 20 % en Dada Coins</div>
+      <div style="font-size:9.5px;line-height:1.45;color:#5B6276">• Pas d'auto-parrainage<br>• Un compte par personne<br>• Coins après une vraie location<br>• « #sponsorisé » sur les vidéos</div>
+      <div class="opt on" style="margin-top:8px">☑ J'accepte</div>
+      <div class="btn">Terminer</div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:18px">
+    <div class="soft col">
+      <b>Ensuite, tout est prêt :</b>
+      <ul class="clean">
+        <li>votre <b>code</b> (ex. YASMINE20),</li>
+        <li>votre <b>lien</b> à partager,</li>
+        <li>votre <b>QR code</b> à imprimer ou montrer,</li>
+        <li>votre <b>portefeuille</b> de Dada Coins.</li>
+      </ul>
+    </div>
+    <div class="soft2 col">
+      <b>Pour une entreprise :</b> deux écrans de plus
+      <ul class="clean">
+        <li>la <b>fiche de l'agence</b> (nom, matricule fiscal, adresse, flotte),</li>
+        <li>les <b>documents</b> en photo,</li>
+        <li>puis l'<b>accord de commission</b>.</li>
+      </ul>
+      <p style="margin-top:6px">Détails page suivante 👉</p>
+    </div>
+  </div>
+  </div>
+  <div class="brand">Dada Commission</div><div class="num">4</div>
+</section>
+
+<!-- ============================== 5. ENTREPRISE -->
+<section class="page">
+  <div class="z" style="zoom:1.3">
+  <div class="kicker">Pour les agences de location</div>
+  <h2>Rejoindre le hub comme entreprise</h2>
+  <p class="lead">Inscription gratuite. Vous ne payez qu'une commission sur les locations <b>terminées et payées</b> apportées par un code.</p>
+
+  <div class="row">
+    <div class="col">
+      <div class="steps">
+        <div class="step"><div class="dot grad">1</div><div><b>Compte « Entreprise »</b><span>Connexion, puis « Entreprise de location de voitures ».</span></div></div>
+        <div class="step"><div class="dot grad">2</div><div><b>Fiche de l'agence</b><span>Nom commercial, matricule fiscal, adresse, téléphone, nombre de voitures.</span></div></div>
+        <div class="step"><div class="dot grad">3</div><div><b>Documents en photo</b><span>Possible plus tard : le dossier reste « incomplet ».</span></div></div>
+        <div class="step"><div class="dot grad">4</div><div><b>Accord de commission</b><span>On coche, c'est signé.</span></div></div>
+        <div class="step"><div class="dot grad">5</div><div><b>Vérification Dada</b><span>Dossier complet → « en attente » → « validée ».</span></div></div>
+        <div class="step"><div class="dot grad">6</div><div><b>Vos voitures en ligne</b><span>Elles apparaissent dans la Marketplace, les ambassadeurs les partagent.</span></div></div>
+        <div class="step"><div class="dot grad">7</div><div><b>Relevé mensuel</b><span>La liste des locations apportées et la commission due.</span></div></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <b>📎 Documents à préparer</b>
+        <ul class="clean">
+          <li>Extrait du RNE</li>
+          <li>Attestation de matricule fiscal</li>
+          <li>CIN du gérant</li>
+          <li>Attestation d'assurance de la flotte</li>
+          <li>Autorisation de location de voitures</li>
+        </ul>
+      </div>
+      <div class="ticket" style="margin-top:12px">
+        <b style="display:block;margin-bottom:4px">🧾 Exemple : Sami loue 3 jours</b>
+        <div class="l"><span>3 × 150 DT</span><span>450,000 DT</span></div>
+        <div class="l"><span>Remise client −5 %</span><span>−22,500 DT</span></div>
+        <div class="l"><span><b>Sami paie</b></span><span><b>427,500 DT</b></span></div>
+        <div class="l"><span>Ambassadrice (Or 16 %)</span><span>68,400 DT</span></div>
+        <div class="l tot"><span>Il reste à l'agence</span><span>359,100 DT</span></div>
+        <p class="tag" style="margin-top:4px">L'ambassadrice reçoit 684 Dada Coins.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:14px">
+    <div class="soft2 col"><b>Annulation ?</b><p>Pas de commission.</p></div>
+    <div class="soft col"><b>Remboursement ?</b><p>Commission annulée, coins repris.</p></div>
+    <div class="soft2 col"><b>Vos clients ?</b><p>Leur nom reste caché aux ambassadeurs.</p></div>
+  </div>
+  </div>
+  <div class="brand">Dada Commission</div><div class="num">5</div>
+</section>
+
+<!-- ============================== 6. COINS -->
+<section class="page">
+  <div class="z" style="zoom:1.24">
+  <div class="kicker">Les Dada Coins</div>
+  <h2>Gagner, attendre, profiter</h2>
+  <p class="lead"><b>10 Dada Coins = 1 DT</b> en cadeaux. Ce sont des points cadeaux (comme une carte de fidélité), pas de l'argent.</p>
+
+  <b style="font-size:15px">Plus vous amenez de clients, plus votre part monte</b>
+  <div class="stairs" style="margin-top:10px">
+    <div class="stair" style="height:40%;background:#B0703A"><div class="p">8 %</div>Bronze<br><span style="font-size:11px">pour commencer</span></div>
+    <div class="stair" style="height:58%;background:#8A8D91"><div class="p">12 %</div>Argent<br><span style="font-size:11px">dès 3 locations</span></div>
+    <div class="stair" style="height:78%;background:#C9A227"><div class="p">16 %</div>Or<br><span style="font-size:11px">dès 10 locations</span></div>
+    <div class="stair grad" style="height:100%"><div class="p">20 %</div>Diamant<br><span style="font-size:11px">dès 25 locations</span></div>
+  </div>
+  <p class="tag" style="margin-top:6px">Locations terminées sur les 3 derniers mois, recalculé le 1er de chaque mois.</p>
+
+  <b style="font-size:15px;display:block;margin-top:16px">Quand arrivent les coins ?</b>
+  <div class="tl" style="margin-top:8px">
+    <div class="box"><img src="../../assets/images/fluent/reward_voucher.png">Code utilisé</div><div class="to">→</div>
+    <div class="box"><img src="../../assets/images/fluent/car_citadine.png">Location terminée</div><div class="to">→</div>
+    <div class="box" style="background:#FFF7E0"><img src="../../assets/images/fluent/reward_watch.png">7 jours<br>« en attente »</div><div class="to">→</div>
+    <div class="box" style="background:var(--soft2)"><img src="../../assets/images/fluent/coin.png">Disponibles</div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="card col">
+      <b>✅ Avec vos coins</b>
+      <ul class="clean">
+        <li><b>Échanger</b> dans la boutique : bons d'achat, téléphones, PC, jours de location, recharges, restos…</li>
+        <li><b>Envoyer</b> à un autre compte avec son code.</li>
+        <li><b>Gagner plus</b> avec les défis du mois.</li>
+      </ul>
+    </div>
+    <div class="card col">
+      <b>❌ Ce qu'on ne peut pas faire</b>
+      <ul class="clean">
+        <li>Les retirer en argent.</li>
+        <li>Les acheter.</li>
+        <li>Les garder plus de 12 mois (rappel à J-30 et J-7).</li>
+      </ul>
+      <p class="tag" style="margin-top:6px">Cadeau de plus de 5 000 coins : photo de la CIN demandée une fois.</p>
+    </div>
+  </div>
+  <div class="row" style="margin-top:12px;align-items:center">
+    <img src="../../assets/images/fluent/reward_phone.png" style="width:52px"><img src="../../assets/images/fluent/reward_laptop.png" style="width:52px">
+    <img src="../../assets/images/fluent/reward_headphone.png" style="width:52px"><img src="../../assets/images/fluent/reward_fuel.png" style="width:52px">
+    <img src="../../assets/images/fluent/reward_restaurant.png" style="width:52px"><img src="../../assets/images/fluent/reward_rental_day.png" style="width:52px">
+    <p class="tag" style="margin-left:6px">Quelques cadeaux de la boutique Dada</p>
+  </div>
+  </div>
+  <div class="brand">Dada Commission</div><div class="num">6</div>
+</section>
+
+<!-- ============================== 7. CE QU'ON GARDE EN MÉMOIRE -->
+<section class="page">
+  <div class="z" style="zoom:1.2">
+  <div class="kicker">Sous le capot, sans jargon</div>
+  <h2>Ce que l'application garde en mémoire</h2>
+  <p class="lead">Imaginez une grande armoire avec des tiroirs bien rangés. Chaque tiroir contient un type de fiche.
+  Les tiroirs marqués 🔒 ne peuvent être modifiés que par le système Dada — personne ne peut « se rajouter » des coins.</p>
+
+  <div class="drawers">
+    <div class="drawer"><b>👤 Profils</b><span>Nom, photo, ville, type de compte, code, niveau.</span></div>
+    <div class="drawer"><b>🏢 Entreprises</b><span>Fiche de l'agence, documents, accord, statut de validation.</span></div>
+    <div class="drawer"><b>🚗 Voitures</b><span>Modèle, prix par jour, photos, agence.</span></div>
+    <div class="drawer"><b>📰 Publications</b><span>Le fil d'actualité, avec ses j'aime et commentaires.</span></div>
+    <div class="drawer"><b>🔑 Locations apportées</b><span>Qui a amené qui, l'état de la location, la commission. <em class="lock">🔒</em></span></div>
+    <div class="drawer"><b>💰 Portefeuilles</b><span>Le solde de chacun + l'historique de chaque mouvement. <em class="lock">🔒</em></span></div>
+    <div class="drawer"><b>🔁 Transferts</b><span>Les coins envoyés d'un compte à l'autre. <em class="lock">🔒</em></span></div>
+    <div class="drawer"><b>🎁 Boutique & commandes</b><span>Les cadeaux et leur suivi : réservé, préparé, livré.</span></div>
+    <div class="drawer"><b>🏆 Défis</b><span>Les défis du mois, badges et classement.</span></div>
+  </div>
+
+  <div class="row" style="margin-top:14px">
+    <div class="soft col">
+      <b>Les règles du jeu</b>
+      <ul class="clean">
+        <li>Pas d'auto-parrainage (même téléphone, CIN ou carte).</li>
+        <li>Des coins uniquement pour une location terminée et payée.</li>
+        <li>Remboursement = coins repris.</li>
+        <li>Un compte par personne, dès 18 ans.</li>
+        <li>Publications honnêtes, « #sponsorisé » sur les vidéos.</li>
+      </ul>
+    </div>
+    <div class="col grad" style="border-radius:18px;padding:16px;color:#fff">
+      <b style="font-size:17px">Questions fréquentes</b>
+      <p style="margin-top:8px"><b>Combien ça coûte ?</b> Rien, pour tout le monde.</p>
+      <p style="margin-top:6px"><b>J'ai peu d'abonnés ?</b> Un lien envoyé à vos amis sur WhatsApp suffit.</p>
+      <p style="margin-top:6px"><b>Mon client a annulé ?</b> Pas de coins pour cette location, rien d'autre ne change.</p>
+      <p style="margin-top:6px"><b>Je peux envoyer mes coins ?</b> Oui, à n'importe quel compte, avec son code.</p>
+    </div>
+  </div>
+  <p class="tag" style="margin-top:12px">Illustrations 3D : Microsoft Fluent Emoji (licence MIT). Les chiffres sont des exemples.</p>
+  </div>
+  <div class="brand">Dada Commission</div><div class="num">7</div>
+</section>
+
+</body>
+</html>
