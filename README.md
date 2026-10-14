@@ -10,6 +10,9 @@ The full concept is in `assets/Le concept.pdf`.
 **Documentation (in French)**
 - `docs/Guide-Dada-Commission.pdf`: short illustrated guide for non-technical
   readers (source: `docs/guide/guide.html`)
+- `assets/Dada-Commission-Agences-Partenaires.pdf`: benefits for partner
+  rent-car companies and the design for automating the referral network
+  (source: `docs/partenaires/agences.html`)
 - `docs/conception-base-de-donnees.md`: database design (collections, fields,
   Cloud Functions, draft security rules, key flows)
 
