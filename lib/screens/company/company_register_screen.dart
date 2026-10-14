@@ -90,8 +90,7 @@ class _CompanyFile extends StatelessWidget {
         'Dossier complet ✅ L\'équipe Dada vérifie vos informations. Vous serez '
             'notifié dès la validation.',
       CompanyStatus.approved =>
-        'Votre agence est visible dans la marketplace. Ajoutez vos voitures '
-            'depuis l\'espace agence (bientôt).',
+        'Agence validée ✅ Prenez les demandes prépayées depuis l\'Accueil.',
       CompanyStatus.rejected =>
         company.rejectionReason ?? 'Dossier refusé. Contactez l\'équipe Dada.',
       CompanyStatus.suspended => 'Compte suspendu. Contactez l\'équipe Dada.',
@@ -172,7 +171,7 @@ class _CompanyFile extends StatelessWidget {
                 _Info(Icons.person_outline, 'Contact', company.contactName!),
               _Info(
                 Icons.handshake_outlined,
-                'Accord de commission',
+                'Conditions agence',
                 company.agreementAcceptedAt == null
                     ? 'Non accepté'
                     : 'Accepté le ${Fmt.longDate(company.agreementAcceptedAt!)}',
@@ -181,7 +180,19 @@ class _CompanyFile extends StatelessWidget {
           ),
         ),
         if (!approved) ...[
-          const SizedBox(height: 16),
+          if (state.user!.isGuest) ...[
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              key: const Key('demo-approve'),
+              icon: const Icon(Icons.science_outlined),
+              label: const Text('Démo : simuler la validation Dada'),
+              onPressed: () {
+                state.demoApproveMyCompany();
+                showSnack(context, 'Agence validée (démo) ✅');
+              },
+            ),
+          ],
+          const SizedBox(height: 8),
           TextButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
@@ -189,7 +200,7 @@ class _CompanyFile extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.menu_book_outlined),
-            label: const Text('Relire le guide entreprise'),
+            label: const Text('Relire le guide agences'),
           ),
         ],
       ],

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants.dart';
 import '../../core/formatters.dart';
 import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../models/models.dart';
+import '../../services/share_service.dart';
 import '../../widgets/common.dart';
 import '../business/business_guide_screen.dart';
 import '../company/company_register_screen.dart';
-import '../wallet/wallet_screen.dart' show TierProgressCard;
 import 'edit_profile_screen.dart';
 
 /// Profil: identity, code / link / QR, wallet summary and settings.
@@ -40,7 +41,7 @@ class ProfileScreen extends StatelessWidget {
               onTap: () => _openEdit(context),
               child: Stack(
                 children: [
-                  MyAvatar(radius: 48, ring: AppTheme.tierColor(user.tier)),
+                  const MyAvatar(radius: 48, ring: AppTheme.green),
                   Positioned(
                     right: 0,
                     bottom: 0,
@@ -68,7 +69,7 @@ class ProfileScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TierBadge(tier: user.tier),
+              StatusPill(label: user.role.label, color: AppTheme.blue),
               if (user.isGuest) ...[
                 const SizedBox(width: 8),
                 const Chip(
@@ -93,62 +94,67 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ------------------------------------------------ code / link / QR
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const Text(
-                    'Mon code',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.referralCode,
-                    style: AppTheme.display(fontSize: 30),
-                  ),
-                  const SizedBox(height: 12),
-                  ReferralQr(data: user.referralLink, size: 160),
-                  const SizedBox(height: 12),
-                  Text(
-                    user.referralLink,
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 13,
+          if (user.role.earnsCommission) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Mon code',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => copyText(context, user.referralCode),
-                          icon: const Icon(Icons.copy_rounded, size: 18),
-                          label: const Text('Code'),
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      user.referralCode,
+                      style: AppTheme.display(fontSize: 30),
+                    ),
+                    const SizedBox(height: 12),
+                    ReferralQr(data: user.referralLink, size: 160),
+                    const SizedBox(height: 12),
+                    Text(
+                      user.referralLink,
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 13,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () => copyText(
-                            context,
-                            user.referralLink,
-                            message: 'Lien copié : partagez-le sur WhatsApp, TikTok…',
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                copyText(context, user.referralCode),
+                            icon: const Icon(Icons.copy_rounded, size: 18),
+                            label: const Text('Code'),
                           ),
-                          icon: const Icon(Icons.link_rounded, size: 18),
-                          label: const Text('Lien'),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: FilledButton.icon(
+                            key: const Key('share-code'),
+                            onPressed: () => const ShareService().share(
+                              text:
+                                  'Louez une voiture avec −5 % grâce à mon code '
+                                  '${user.referralCode} 👉 ${user.referralLink}',
+                              link: user.referralLink,
+                            ),
+                            icon: const Icon(Icons.ios_share_rounded, size: 18),
+                            label: const Text('Partager'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
+          ],
 
           // ------------------------------------------------ wallet
-          // Coin actions live in the Marketplace; this is just a shortcut.
+          // Coin actions live in the Wallet tab; this is just a shortcut.
           Card(
             child: ListTile(
               leading: Image.asset('assets/images/fluent/coin.png', width: 36),
@@ -159,7 +165,7 @@ class ProfileScreen extends StatelessWidget {
                   fontSize: 18,
                 ),
               ),
-              subtitle: const Text('Mon portefeuille · envoyer, échanger'),
+              subtitle: const Text('Wallet · envoyer, recevoir, acheter'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.of(context).popUntil((r) => r.isFirst);
@@ -172,8 +178,7 @@ class ProfileScreen extends StatelessWidget {
             _BusinessCard(company: state.myCompany),
             const SizedBox(height: 16),
           ],
-          TierProgressCard(user: user),
-          const SizedBox(height: 20),
+          const SizedBox(height: 4),
 
           // ------------------------------------------------ settings
           const SectionTitle('Paramètres'),
@@ -268,32 +273,16 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Text('Comment ça marche', style: AppTheme.display(fontSize: 22)),
             const SizedBox(height: 12),
-            const Text(
-              '1. Partagez une voiture avec votre code, votre lien ou votre QR code.\n'
-              '2. Votre client réserve et obtient −5 % sur sa première location.\n'
-              '3. 7 jours après le retour de la voiture, vous recevez vos Dada Coins.\n'
-              '4. Échangez-les dans la boutique ou envoyez-les à un autre compte.',
+            Text(
+              '1. Le client publie la voiture qu\'il cherche avec le code d\'un '
+              'ambassadeur : −${Fmt.percent(kCustomerDiscountRate)} sur le prix.\n'
+              '2. Il paie ${Fmt.percent(kPrepaymentRate)} d\'acompte avec Click to Pay.\n'
+              '3. L\'ambassadeur reçoit tout de suite ${Fmt.percent(kAmbassadorRate)} '
+              'en Dada Coins (10 DC = 1 DT).\n'
+              '4. Une agence prend la demande, contacte le client et encaisse '
+              'les ${Fmt.percent(1 - kPrepaymentRate)} restants.\n'
+              '5. L\'agence marque la location comme terminée.',
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Vos niveaux',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            for (final t in AmbassadorTier.values)
-              ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: TierBadge(tier: t, dense: true),
-                title: Text(
-                  '${Fmt.percent(t.commissionRate)} de chaque location',
-                ),
-                subtitle: Text(
-                  t.minCompletedRentals == 0
-                      ? 'pour commencer'
-                      : 'dès ${t.minCompletedRentals} locations sur 3 mois',
-                ),
-              ),
             const SizedBox(height: 16),
             const Text(
               'Les règles',
@@ -301,12 +290,11 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              '• Pas d\'auto-parrainage (même téléphone, même CIN ou même carte).\n'
-              '• Seules les locations terminées et payées rapportent des coins.\n'
-              '• Location remboursée = coins repris.\n'
-              '• Un compte par personne, dès 18 ans.\n'
-              '• Publications honnêtes : « #sponsorisé » sur les vidéos.\n'
-              '• 10 DC = 1 DT en cadeaux. Les coins expirent après 12 mois.',
+              '• Pas d\'auto-parrainage : on ne peut pas utiliser son propre code.\n'
+              '• L\'acompte n\'est pas remboursé si le client ne vient pas.\n'
+              '• Le téléphone du client n\'est visible que par l\'agence qui prend la demande.\n'
+              '• Un compte par personne, dès 18 ans pour les ambassadeurs.\n'
+              '• Les coins se transfèrent avec le code du destinataire et s\'achètent avec Click to Pay.',
             ),
           ],
         ),

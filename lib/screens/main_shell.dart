@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
 import 'activity/activity_screen.dart';
-import 'home/feed_screen.dart';
-import 'marketplace/marketplace_screen.dart';
 import 'profile/profile_screen.dart';
+import 'requests/feed_screen.dart';
+import 'wallet/wallet_screen.dart';
 
-/// Bottom-nav shell: Accueil (feed) · Marketplace · Activité · Profil.
+/// Bottom-nav shell: Accueil (requests) · Wallet · Activité · Profil.
 class MainShell extends StatelessWidget {
   const MainShell({super.key});
 
   static const _tabs = [
     FeedScreen(),
-    MarketplaceScreen(),
+    WalletScreen(),
     ActivityScreen(),
     ProfileScreen(),
   ];
@@ -32,9 +32,9 @@ class MainShell extends StatelessWidget {
             label: 'Accueil',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.storefront_outlined),
-            activeIcon: Icon(Icons.storefront_rounded),
-            label: 'Marketplace',
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            activeIcon: Icon(Icons.account_balance_wallet_rounded),
+            label: 'Wallet',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.insights_outlined),

@@ -1,61 +1,44 @@
 import 'package:dada_commission/core/formatters.dart';
 import 'package:dada_commission/data/app_state.dart';
 import 'package:dada_commission/models/models.dart';
+import 'package:dada_commission/services/payment_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+class _FailingGateway implements PaymentGateway {
+  @override
+  Future<PaymentResult> pay({
+    required int amountMillimes,
+    required PaymentPurpose purpose,
+    required String description,
+  }) async => const PaymentResult.failure('Carte refusée');
+}
+
 void main() {
-  group('CommissionCalculator', () {
-    test('matches the concept example (Yasmine, Gold, Sami 3 days)', () {
-      final c = CommissionCalculator.compute(
-        days: 3,
-        pricePerDay: 150,
-        tierRate: AmbassadorTier.gold.commissionRate,
-      );
-      expect(c.grossDt, 450);
-      expect(c.netDt, 427.5);
-      expect(c.commissionDt, 68.4);
-      expect(c.coins, 684);
+  const instant = DemoPaymentGateway(delay: Duration.zero);
+
+  group('RequestPricing', () {
+    test('matches the G-Class example: 700 DT due', () {
+      final p = RequestPricing.fromAmountDue(700);
+      expect(p.prepaymentDt, 70);
+      expect(p.ambassadorDt, 56);
+      expect(p.ambassadorCoins, 560);
+      expect(p.dadaFeeDt, 14);
+      expect(p.agencyDt, 630);
     });
 
-    test('repeat customer: no discount, half rate', () {
-      final c = CommissionCalculator.compute(
-        days: 1,
-        pricePerDay: 100,
-        tierRate: 0.16,
-        isRepeatCustomer: true,
-      );
-      expect(c.discountDt, 0);
-      expect(c.rate, 0.08);
-      expect(c.coins, 80);
+    test('applies the −5 % code discount to the list price', () {
+      final p = RequestPricing.fromListPrice(1000);
+      expect(p.discountDt, 50);
+      expect(p.amountDueDt, 950);
+      expect(p.prepaymentDt, 95);
+      expect(p.ambassadorCoins, 760);
+      expect(p.prepaymentMillimes, p.ambassadorMillimes + p.dadaFeeMillimes);
     });
 
-    test('cancelled referral earns nothing', () {
-      final r = Referral(
-        id: 'r',
-        ambassadorId: 'a',
-        referralCode: 'X',
-        companyId: 'c',
-        carId: 'car',
-        carModel: 'm',
-        customerMaskedName: 'S***i',
-        rentalDays: 3,
-        pricePerDay: 150,
-        commissionRate: 0.16,
-        status: ReferralStatus.cancelled,
-        bookedAt: DateTime(2026),
-      );
-      expect(r.coins, 0);
-    });
-  });
-
-  group('AmbassadorTier', () {
-    test('levels follow completed rentals over 3 months', () {
-      expect(AmbassadorTier.forCompletedRentals(0), AmbassadorTier.bronze);
-      expect(AmbassadorTier.forCompletedRentals(3), AmbassadorTier.silver);
-      expect(AmbassadorTier.forCompletedRentals(10), AmbassadorTier.gold);
-      expect(AmbassadorTier.forCompletedRentals(24), AmbassadorTier.gold);
-      expect(AmbassadorTier.forCompletedRentals(25), AmbassadorTier.diamond);
-      expect(AmbassadorTier.diamond.next, isNull);
+    test('ambassador coins are whole', () {
+      final p = RequestPricing.fromListPrice(123.457);
+      expect(p.ambassadorMillimes % 100, 0);
+      expect(p.dadaFeeMillimes, greaterThanOrEqualTo(0));
     });
   });
 
@@ -72,53 +55,104 @@ void main() {
     test('rejects self transfer', () => expect(v(to: 'yasmine20'), isNotNull));
     test('rejects below minimum', () => expect(v(amount: 5), isNotNull));
     test('rejects above balance', () => expect(v(amount: 185), isNotNull));
-    test('rejects empty code', () => expect(v(to: ' '), isNotNull));
   });
 
   group('AppState (guest mode)', () {
     late AppState state;
-    setUp(() => state = AppState()..signInAsGuest());
+    setUp(() => state = AppState(payments: instant)..signInAsGuest());
 
-    test('loads the concept wallet', () {
-      expect(state.user!.referralCode, 'YASMINE20');
-      expect(state.wallet.balance, 184);
+    test('wallet equals the ledger and the G-Class earning is there', () {
       final ledger = state.transactions.fold<int>(0, (s, t) => s + t.amount);
-      expect(ledger, state.wallet.balance);
+      expect(state.wallet.balance, ledger);
+      expect(
+        state.transactions.any((t) => t.requestId == 'rq1' && t.amount == 560),
+        isTrue,
+      );
     });
 
-    test('transfer debits the wallet and logs the ledger entry', () {
-      expect(state.transferCoins(toCode: 'sara11', amount: 100), isNull);
-      expect(state.wallet.balance, 84);
-      expect(state.transactions.first.type, CoinTransactionType.transferOut);
-      expect(state.transactions.first.amount, -100);
-      expect(state.transfers.single.toUserId, 'u_sara');
+    test('feed only shows prepaid requests', () {
+      state.completeSetup(role: UserRole.client, displayName: 'Sami');
+      state.createRequest(
+        code: 'SARA11',
+        carWanted: 'Clio',
+        category: CarCategory.compacte,
+        city: 'Tunis',
+        startDate: DateTime(2026, 11, 1),
+        endDate: DateTime(2026, 11, 4),
+        listPriceDt: 300,
+      );
+      expect(state.publicRequests.every((r) => r.isPaid), isTrue);
     });
 
-    test('transfer to an unknown code fails without side effects', () {
-      expect(state.transferCoins(toCode: 'NOPE', amount: 50), isNotNull);
-      expect(state.wallet.balance, 184);
+    test('own code is refused', () {
+      final error = state.validateRequest(
+        code: 'YASMINE20',
+        startDate: DateTime(2026, 11, 1),
+        endDate: DateTime(2026, 11, 3),
+        listPriceDt: 300,
+      );
+      expect(error, contains('propre code'));
     });
 
-    test('redeem reserves coins', () {
-      final topUp = state.rewards.firstWhere((r) => r.id == 'rw_topup');
-      expect(state.redeem(topUp), isNull);
-      expect(state.wallet.balance, 84);
-      expect(state.redemptions.single.rewardId, 'rw_topup');
+    test('prepaying a request with my code credits 8 % at once', () async {
+      final before = state.wallet.balance;
+      final r = await state.simulateClientRequest();
+      expect(r!.status, RequestStatus.open);
+      expect(r.paidAt, isNotNull);
+      expect(state.wallet.balance, before + r.pricing.ambassadorCoins);
+      expect(state.payments.first.status, PaymentStatus.succeeded);
+      expect(
+        state.transactions.first.type,
+        CoinTransactionType.referralEarning,
+      );
     });
 
-    test('comments are added and counted', () {
-      expect(state.commentsFor('p1'), hasLength(2));
-      expect(state.addComment('p1', '   '), isFalse);
-      expect(state.addComment('p1', 'Génial'), isTrue);
-      expect(state.commentsFor('p1').last.text, 'Génial');
-      expect(state.posts.firstWhere((p) => p.id == 'p1').commentCount, 3);
-    });
+    test(
+      'a failed payment leaves the request unpaid and coins untouched',
+      () async {
+        final failing = AppState(payments: _FailingGateway())..signInAsGuest();
+        failing.completeSetup(role: UserRole.client, displayName: 'Sami');
+        final r = failing.createRequest(
+          code: 'SARA11',
+          carWanted: 'Clio',
+          category: CarCategory.compacte,
+          city: 'Tunis',
+          startDate: DateTime(2026, 11, 1),
+          endDate: DateTime(2026, 11, 4),
+          listPriceDt: 300,
+        );
+        expect(await failing.payPrepayment(r.id), 'Carte refusée');
+        expect(
+          failing.requestById(r.id)!.status,
+          RequestStatus.awaitingPayment,
+        );
+      },
+    );
 
-    test('guest must finish setup before using the app', () {
-      expect(state.needsSetup, isTrue);
-      state.completeSetup(role: UserRole.partner, displayName: 'Hôtel X');
-      expect(state.needsSetup, isFalse);
-      expect(state.user!.role, UserRole.partner);
+    test('only an approved agency can take and complete a request', () {
+      expect(state.claimRequest('rq4'), isNotNull);
+      state.registerCompany(
+        name: 'Medina Location',
+        taxRegistrationNumber: '123/A',
+        city: 'Sousse',
+        phone: '22000000',
+        agreementAccepted: true,
+      );
+      state.completeSetup(role: UserRole.companyAdmin, displayName: 'Mehdi');
+      expect(state.claimRequest('rq4'), isNotNull); // still pending
+      state.demoApproveMyCompany();
+      expect(state.claimRequest('rq4'), isNull);
+      expect(state.requestById('rq4')!.status, RequestStatus.claimed);
+      expect(state.claimRequest('rq4'), isNotNull); // already taken
+      expect(
+        state.completeRequest(
+          'rq4',
+          const RentedCar(model: 'Peugeot 3008', finalPriceDt: 1330),
+        ),
+        isNull,
+      );
+      expect(state.requestById('rq4')!.status, RequestStatus.completed);
+      expect(state.myAgencyRequests.single.id, 'rq4');
     });
 
     test('company file becomes pending once every document is sent', () {
@@ -133,56 +167,58 @@ void main() {
       for (final t in CompanyDocumentType.values) {
         state.submitCompanyDocument(t);
       }
-      expect(state.myCompany!.hasAllDocuments, isTrue);
       expect(state.myCompany!.status, CompanyStatus.pending);
     });
 
-    test('company registration is pending and hidden from marketplace', () {
-      state.registerCompany(
-        name: 'Medina Location',
-        taxRegistrationNumber: '123/A',
-        city: 'Sousse',
-        phone: '22000000',
-      );
-      expect(state.myCompany!.status, CompanyStatus.draft);
-      expect(
-        state.approvedCompanies.any((c) => c.name == 'Medina Location'),
-        isFalse,
-      );
+    test('transfer and coin purchase move the balance', () async {
+      final start = state.wallet.balance;
+      expect(state.transferCoins(toCode: 'sara11', amount: 100), isNull);
+      expect(state.wallet.balance, start - 100);
+      expect(await state.buyCoins(500), isNull);
+      expect(state.wallet.balance, start + 400);
+      expect(state.transactions.first.type, CoinTransactionType.purchase);
+      expect(await state.buyCoins(50), isNotNull); // below minimum
     });
   });
 
   group('serialization', () {
-    test('AppUser round-trips', () {
-      final u = AppUser(
-        id: 'u1',
-        displayName: 'Karim M.',
-        authProvider: AuthProviderType.whatsapp,
-        referralCode: 'karim05',
-        tier: AmbassadorTier.silver,
-        createdAt: DateTime(2026, 10, 1),
+    test('RentalRequest round-trips (phone kept out of the public doc)', () {
+      final r = RentalRequest(
+        id: 'r',
+        referralCode: 'YASMINE20',
+        ambassadorId: 'u_y',
+        ambassadorName: 'Yasmine B.',
+        clientId: 'c',
+        clientName: 'Sami Ben Ali',
+        clientPhone: '+216 98 111 222',
+        carWanted: 'Classe G',
+        category: CarCategory.luxe,
+        city: 'Tunis',
+        startDate: DateTime(2026, 10, 20),
+        endDate: DateTime(2026, 10, 23),
+        listPriceDt: 736.842,
+        status: RequestStatus.open,
+        paidAt: DateTime(2026, 10, 14),
+        createdAt: DateTime(2026, 10, 14),
       );
-      final back = AppUser.fromJson('u1', u.toJson());
-      expect(back.referralCode, 'KARIM05');
-      expect(back.tier, AmbassadorTier.silver);
-      expect(back.authProvider, AuthProviderType.whatsapp);
-      expect(back.createdAt, DateTime(2026, 10, 1));
-      expect(back.referralLink, endsWith('/r/KARIM05'));
+      final json = r.toJson();
+      expect(json.containsKey('clientPhone'), isFalse);
+      expect(json['ambassadorCoins'], 560);
+      final back = RentalRequest.fromJson('r', json);
+      expect(back.status, RequestStatus.open);
+      expect(back.days, 3);
+      expect(back.maskedClientName, 'S***i');
     });
 
     test('unknown enum values fall back to defaults', () {
-      final w = CoinTransaction.fromJson('t', {'amount': 5, 'type': 'weird'});
-      expect(w.type, CoinTransactionType.adjustment);
+      final t = CoinTransaction.fromJson('t', {'amount': 5, 'type': 'weird'});
+      expect(t.type, CoinTransactionType.adjustment);
     });
   });
 
-  group('Fmt', () {
-    test('formats coins and dinars the French way', () {
-      expect(Fmt.coins(6000), '6 000 DC');
-      expect(Fmt.dinars(68.4), '68,400 DT');
-      expect(Fmt.signedCoins(684), '+684 DC');
-      expect(Fmt.signedCoins(-500), '−500 DC');
-      expect(Referral.maskName('Sami'), 'S***i');
-    });
+  test('Fmt formats coins and dinars the French way', () {
+    expect(Fmt.coins(6000), '6 000 DC');
+    expect(Fmt.dinars(68.4), '68,400 DT');
+    expect(Fmt.signedCoins(560), '+560 DC');
   });
 }

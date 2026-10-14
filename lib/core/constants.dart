@@ -1,4 +1,4 @@
-// Business rules from the concept document ("Le concept", assets/).
+// Business rules of the Dada Commission hub (v2: prepaid requests).
 //
 // Kept in one place so the app, the future Cloud Functions and the tests all
 // agree on the same numbers.
@@ -6,23 +6,25 @@
 /// 1 DT = 10 Dada Coins (1 coin = 0.100 DT = 100 millimes).
 const int kCoinsPerDinar = 10;
 
-/// Discount a customer gets on their first rental when using a code or link.
+/// Discount the client gets when booking with an ambassador's code.
 const double kCustomerDiscountRate = 0.05;
 
-/// Coins stay "en attente" for 7 days after the car is returned.
-const int kCoinsHoldDays = 7;
+/// Share of the amount due that the client prepays to Dada (Click to Pay).
+/// It is what makes a request "sure": no prepayment, no request.
+const double kPrepaymentRate = 0.10;
 
-/// Coins expire 12 months after they are earned.
-const int kCoinsExpiryMonths = 12;
+/// Share of the amount due credited to the ambassador, in Dada Coins, as soon
+/// as the prepayment succeeds. Fixed for every ambassador.
+const double kAmbassadorRate = 0.08;
 
-/// Redeeming a reward above this price requires a one-time CIN check.
-const int kIdCheckThresholdCoins = 5000;
+/// What Dada keeps from the prepayment (10 % - 8 % = 2 % of the amount due).
+const double kDadaRate = kPrepaymentRate - kAmbassadorRate;
 
 /// Smallest amount that can be sent to another account.
 const int kMinTransferCoins = 10;
 
-/// A returning customer (same year) earns the ambassador half their rate.
-const double kRepeatCustomerRateFactor = 0.5;
+/// Smallest Dada Coin purchase (10 DT).
+const int kMinCoinPurchase = 100;
 
 /// Base of every referral link: `<base><CODE>`. Firebase Hosting default
 /// domain of the `dada-commission` project; swap for a custom domain later.

@@ -113,61 +113,20 @@ class CoinChip extends StatelessWidget {
   }
 }
 
-class TierBadge extends StatelessWidget {
-  const TierBadge({super.key, required this.tier, this.dense = false});
-  final AmbassadorTier tier;
-  final bool dense;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = AppTheme.tierColor(tier);
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: dense ? 8 : 10,
-        vertical: dense ? 2 : 4,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.6)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.workspace_premium_rounded,
-            size: dense ? 13 : 16,
-            color: color,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            tier.label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
-              fontSize: dense ? 11 : 13,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Coloured status label ("Terminée", "En cours", "Annulée").
 class StatusPill extends StatelessWidget {
   const StatusPill({super.key, required this.label, required this.color});
   final String label;
   final Color color;
 
-  factory StatusPill.referral(ReferralStatus status) => StatusPill(
+  factory StatusPill.request(RequestStatus status) => StatusPill(
     label: status.label,
     color: switch (status) {
-      ReferralStatus.validated => AppTheme.success,
-      ReferralStatus.booked ||
-      ReferralStatus.inProgress ||
-      ReferralStatus.returned => AppTheme.warning,
-      ReferralStatus.cancelled || ReferralStatus.refunded => AppTheme.danger,
+      RequestStatus.open => AppTheme.blueBright,
+      RequestStatus.claimed => AppTheme.warning,
+      RequestStatus.completed => AppTheme.success,
+      RequestStatus.awaitingPayment => AppTheme.navUnselected,
+      RequestStatus.cancelled || RequestStatus.expired => AppTheme.danger,
     },
   );
 
@@ -242,6 +201,17 @@ class AppImage extends StatelessWidget {
   }
 }
 
+/// 3D illustration for a car category (until agencies upload photos).
+String? categoryImage(CarCategory? category) => switch (category) {
+  null => null,
+  CarCategory.citadine => 'assets/images/fluent/car_citadine.png',
+  CarCategory.compacte ||
+  CarCategory.berline => 'assets/images/fluent/car_berline.png',
+  CarCategory.suv => 'assets/images/fluent/car_suv.png',
+  CarCategory.utilitaire => 'assets/images/fluent/car_utilitaire.png',
+  CarCategory.luxe => 'assets/images/fluent/car_luxe.png',
+};
+
 /// Car picture on a soft brand-tinted card (icon fallback).
 class CarImage extends StatelessWidget {
   const CarImage({
@@ -285,7 +255,7 @@ class CarImage extends StatelessWidget {
         children: [
           Expanded(
             child: AppImage(
-              imageUrl,
+              imageUrl ?? categoryImage(category),
               fallback: FittedBox(
                 child: Icon(icon, size: height * 0.38, color: scheme.outline),
               ),

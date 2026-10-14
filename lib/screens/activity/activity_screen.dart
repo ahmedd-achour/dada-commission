@@ -1,375 +1,259 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants.dart';
 import '../../core/formatters.dart';
 import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
+import '../company/company_register_screen.dart';
+import '../requests/create_request_screen.dart';
+import '../requests/request_card.dart';
 
-/// Activité: "Mes clients" (referrals and their coins) and "Défis"
-/// (monthly challenge, badges, ranking).
+/// Activité, by role:
+/// - ambassador / partner: requests brought by my code and coins earned;
+/// - client: my requests;
+/// - agency: requests I took.
 class ActivityScreen extends StatelessWidget {
   const ActivityScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Activité', style: AppTheme.display(fontSize: 22)),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Mes clients'),
-              Tab(text: 'Défis & classement'),
-            ],
-          ),
-        ),
-        body: const TabBarView(children: [_ClientsTab(), _ChallengesTab()]),
+    final state = AppScope.of(context);
+    final role = state.user!.role;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Activité', style: AppTheme.display(fontSize: 22)),
       ),
+      body: switch (role) {
+        UserRole.companyAdmin => const _AgencyActivity(),
+        UserRole.client => const _ClientActivity(),
+        _ => const _AmbassadorActivity(),
+      },
     );
   }
 }
 
-class _ClientsTab extends StatelessWidget {
-  const _ClientsTab();
+class _AmbassadorActivity extends StatelessWidget {
+  const _AmbassadorActivity();
 
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final stats = state.stats;
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final mine = state.myReferrals.where((r) => r.isPaid).toList();
+    final completed = mine
+        .where((r) => r.status == RequestStatus.completed)
+        .length;
+    final earned = mine.fold(0, (s, r) => s + r.pricing.ambassadorCoins);
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(bottom: 24),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _StatTile(value: stats.clicks, label: 'clics'),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatTile(value: stats.bookings, label: 'réservations'),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatTile(value: stats.completed, label: 'terminées'),
-            ),
-          ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _Stat(
+                  value: '${mine.length}',
+                  label: 'clients prépayés',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Stat(value: '$completed', label: 'locations faites'),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Stat(value: Fmt.coins(earned), label: 'gagnés'),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 20),
-        const SectionTitle('Mes clients récents'),
-        if (state.referrals.isEmpty)
+        if (state.user!.isGuest)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: OutlinedButton.icon(
+              key: const Key('simulate-client'),
+              icon: const Icon(Icons.science_outlined),
+              label: const Text('Démo : un client prépaie avec mon code'),
+              onPressed: () async {
+                final r = await state.simulateClientRequest();
+                if (context.mounted && r != null) {
+                  showSnack(
+                    context,
+                    '+${Fmt.coins(r.pricing.ambassadorCoins)} reçus '
+                    '(acompte de ${Fmt.dinars(r.pricing.prepaymentDt)}) ⚡',
+                  );
+                }
+              },
+            ),
+          ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: SectionTitle('Demandes avec mon code'),
+        ),
+        if (mine.isEmpty)
           const EmptyState(
-            icon: Icons.people_outline,
-            message: 'Partagez votre code pour obtenir vos premiers clients.',
+            icon: Icons.share_outlined,
+            message:
+                'Partagez votre code : chaque client qui prépaie vous '
+                'rapporte 8 % en Dada Coins.',
           )
         else
-          Card(
-            child: Column(
-              children: [
-                for (final (i, r) in state.referrals.indexed) ...[
-                  if (i > 0) const Divider(height: 1, indent: 72),
-                  _ReferralTile(referral: r),
-                ],
-              ],
-            ),
-          ),
-        const SizedBox(height: 16),
-        Card(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Icon(Icons.lock_outline, color: muted),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Les noms sont cachés pour protéger la vie privée des clients. '
-                    'Les coins arrivent 7 jours après le retour de la voiture.',
-                    style: TextStyle(color: muted, fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+          for (final r in mine) RequestCard(request: r),
       ],
     );
   }
 }
 
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.value, required this.label});
-  final int value;
+class _ClientActivity extends StatelessWidget {
+  const _ClientActivity();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final mine = state.myClientRequests;
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: FilledButton.icon(
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Nouvelle demande'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CreateRequestScreen()),
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: SectionTitle('Mes demandes'),
+        ),
+        if (mine.isEmpty)
+          const EmptyState(
+            icon: Icons.directions_car_outlined,
+            message:
+                'Aucune demande. Publiez la voiture que vous cherchez '
+                'avec le code d\'un ambassadeur.',
+          )
+        else
+          for (final r in mine) RequestCard(request: r),
+      ],
+    );
+  }
+}
+
+class _AgencyActivity extends StatelessWidget {
+  const _AgencyActivity();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final mine = state.myAgencyRequests;
+    final company = state.myCompany;
+    final completed = mine
+        .where((r) => r.status == RequestStatus.completed)
+        .toList();
+    final revenue = completed.fold<double>(
+      0,
+      (s, r) =>
+          s +
+          (r.rentedCar?.finalPriceDt ?? r.pricing.amountDueDt) *
+              (1 - kPrepaymentRate),
+    );
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        if (!state.canTakeRequests)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: Card(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              child: ListTile(
+                leading: const Icon(Icons.hourglass_top_rounded),
+                title: Text(
+                  company == null
+                      ? 'Aucune agence inscrite'
+                      : 'Agence ${company.status.label.toLowerCase()}',
+                ),
+                subtitle: const Text(
+                  'Vous pourrez prendre des demandes après la validation.',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const CompanyRegisterScreen(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _Stat(value: '${mine.length}', label: 'demandes prises'),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Stat(value: '${completed.length}', label: 'louées'),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Stat(
+                  value: Fmt.price(revenue.roundToDouble()),
+                  label: 'encaissés',
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: SectionTitle('Mes demandes prises'),
+        ),
+        if (mine.isEmpty)
+          const EmptyState(
+            icon: Icons.handshake_outlined,
+            message:
+                'Prenez une demande dans l\'Accueil : le client a déjà '
+                'payé 10 %.',
+          )
+        else
+          for (final r in mine) RequestCard(request: r),
+      ],
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.value, required this.label});
+  final String value;
   final String label;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 18),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         child: Column(
           children: [
-            Text('$value', style: AppTheme.display(fontSize: 28)),
+            FittedBox(
+              child: Text(value, style: AppTheme.display(fontSize: 24)),
+            ),
             const SizedBox(height: 2),
-            Text(label, style: const TextStyle(fontSize: 12)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12),
+            ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ReferralTile extends StatelessWidget {
-  const _ReferralTile({required this.referral});
-  final Referral referral;
-
-  @override
-  Widget build(BuildContext context) {
-    final r = referral;
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    final detail = switch (r.status) {
-      ReferralStatus.booked when r.startDate != null =>
-        'réservée pour le ${Fmt.shortDate(r.startDate!)}',
-      ReferralStatus.cancelled => 'annulée par le client',
-      ReferralStatus.refunded => 'location remboursée',
-      ReferralStatus.returned when r.coinsAvailableAt != null =>
-        'coins le ${Fmt.shortDate(r.coinsAvailableAt!)}',
-      _ => '${r.rentalDays} jours · ${r.carModel}',
-    };
-    final coinsLabel = switch (r.status) {
-      ReferralStatus.validated => Fmt.signedCoins(r.coins),
-      ReferralStatus.cancelled || ReferralStatus.refunded => Fmt.coins(0),
-      _ => '≈ ${Fmt.coins(r.coins)} en attente',
-    };
-
-    return ListTile(
-      leading: UserAvatar(name: r.customerMaskedName),
-      title: Text(
-        r.customerMaskedName,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text('$detail · via ${r.source.label}'),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          StatusPill.referral(r.status),
-          const SizedBox(height: 4),
-          Text(
-            coinsLabel,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: r.status == ReferralStatus.validated
-                  ? AppTheme.success
-                  : muted,
-            ),
-          ),
-        ],
-      ),
-      onTap: () => _showBreakdown(context, r),
-    );
-  }
-
-  void _showBreakdown(BuildContext context, Referral r) {
-    final c = r.commission;
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Calcul de la commission',
-                style: AppTheme.display(fontSize: 20),
-              ),
-              const SizedBox(height: 12),
-              _Line(
-                '${r.customerMaskedName} loue ${r.rentalDays} jours',
-                '${r.rentalDays} × ${Fmt.price(r.pricePerDay)} = ${Fmt.dinars(c.grossDt)}',
-              ),
-              _Line('Remise client', '−${Fmt.dinars(c.discountDt)}'),
-              _Line('Montant payé', Fmt.dinars(c.netDt)),
-              _Line(
-                'Votre part (${Fmt.percent(c.rate)})',
-                Fmt.dinars(c.commissionDt),
-              ),
-              const Divider(),
-              _Line('En Dada Coins', Fmt.coins(c.coins), bold: true),
-              if (r.status.earnsNothing)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Text('Location annulée ou remboursée : pas de coins.'),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Line extends StatelessWidget {
-  const _Line(this.label, this.value, {this.bold = false});
-  final String label;
-  final String value;
-  final bool bold;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: style)),
-          Text(value, style: style),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChallengesTab extends StatelessWidget {
-  const _ChallengesTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final state = AppScope.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    final challenge = state.challenge;
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (challenge != null)
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(AppTheme.radius + 4),
-              border: Border.all(color: scheme.primary, width: 1.5),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  challenge.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(challenge.description),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: challenge.ratio,
-                    minHeight: 8,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${challenge.progress} sur ${challenge.target} · '
-                  'fin le ${Fmt.shortDate(challenge.endsAt)}',
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-        const SizedBox(height: 20),
-        const SectionTitle('Mes badges'),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [for (final b in state.badges) _BadgeView(badge: b)],
-        ),
-        const SizedBox(height: 24),
-        const SectionTitle('Classement du mois'),
-        Card(
-          child: Column(
-            children: [
-              for (final e in state.leaderboard)
-                Container(
-                  decoration: e.isMe
-                      ? BoxDecoration(
-                          color: scheme.primaryContainer.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(AppTheme.radius),
-                          border: Border.all(color: scheme.primary),
-                        )
-                      : null,
-                  child: ListTile(
-                    leading: SizedBox(
-                      width: 28,
-                      child: Text(
-                        '${e.rank}',
-                        style: AppTheme.display(fontSize: 18),
-                      ),
-                    ),
-                    title: Text(
-                      e.displayName,
-                      style: TextStyle(
-                        fontWeight: e.isMe ? FontWeight.bold : FontWeight.w500,
-                      ),
-                    ),
-                    trailing: Text('${e.completedRentals} locations'),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'On affiche les rangs, jamais les gains des autres.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-        ),
-      ],
-    );
-  }
-}
-
-class _BadgeView extends StatelessWidget {
-  const _BadgeView({required this.badge});
-  final AchievementBadge badge;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = badge.earned ? scheme.primary : scheme.outlineVariant;
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: badge.earned ? scheme.primaryContainer : null,
-            border: Border.all(color: color, width: 2),
-          ),
-          child: Text(
-            badge.shortLabel,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: badge.earned ? scheme.onPrimaryContainer : scheme.outline,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(badge.label, style: const TextStyle(fontSize: 12)),
-      ],
     );
   }
 }

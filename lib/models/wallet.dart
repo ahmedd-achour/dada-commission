@@ -19,7 +19,7 @@ class Wallet {
   /// Spendable coins.
   final int balance;
 
-  /// Coins in the 7-day hold after a car is returned.
+  /// Coins not yet available (e.g. a purchase being confirmed).
   final int pendingBalance;
   final int lifetimeEarned;
   final DateTime? updatedAt;
@@ -60,13 +60,16 @@ class Wallet {
 }
 
 enum CoinTransactionType {
-  commission('Commission location'),
-  challengeBonus('Bonus défi'),
-  redemption('Échange boutique'),
+  /// 8 % of a request paid by a client who used the ambassador's code.
+  referralEarning('Gain parrainage'),
   transferIn('Transfert reçu'),
   transferOut('Transfert envoyé'),
+
+  /// Dada Coins bought with Click to Pay.
+  purchase('Achat de coins'),
+
+  /// Coins taken back (fraud, refunded prepayment).
   reversal('Coins repris'),
-  expiry('Coins expirés'),
   adjustment('Ajustement');
 
   const CoinTransactionType(this.label);
@@ -86,14 +89,14 @@ class CoinTransaction {
   final CoinTransactionStatus status;
   final String title;
   final String? subtitle;
-  final String? referralId;
+  final String? requestId;
   final String? transferId;
-  final String? redemptionId;
+  final String? paymentId;
   final String? counterpartyId;
   final String? counterpartyName;
   final DateTime createdAt;
 
-  /// Earned coins expire 12 months later.
+  /// Optional expiry of earned coins (policy to decide).
   final DateTime? expiresAt;
 
   const CoinTransaction({
@@ -105,9 +108,9 @@ class CoinTransaction {
     required this.createdAt,
     this.status = CoinTransactionStatus.completed,
     this.subtitle,
-    this.referralId,
+    this.requestId,
     this.transferId,
-    this.redemptionId,
+    this.paymentId,
     this.counterpartyId,
     this.counterpartyName,
     this.expiresAt,
@@ -132,9 +135,9 @@ class CoinTransaction {
         ),
         title: readString(json['title']),
         subtitle: readNullableString(json['subtitle']),
-        referralId: readNullableString(json['referralId']),
+        requestId: readNullableString(json['requestId']),
         transferId: readNullableString(json['transferId']),
-        redemptionId: readNullableString(json['redemptionId']),
+        paymentId: readNullableString(json['paymentId']),
         counterpartyId: readNullableString(json['counterpartyId']),
         counterpartyName: readNullableString(json['counterpartyName']),
         createdAt: readDate(json['createdAt']) ?? DateTime.now(),
@@ -148,9 +151,9 @@ class CoinTransaction {
     'status': status.name,
     'title': title,
     'subtitle': subtitle,
-    'referralId': referralId,
+    'requestId': requestId,
     'transferId': transferId,
-    'redemptionId': redemptionId,
+    'paymentId': paymentId,
     'counterpartyId': counterpartyId,
     'counterpartyName': counterpartyName,
     'createdAt': writeDate(createdAt),
