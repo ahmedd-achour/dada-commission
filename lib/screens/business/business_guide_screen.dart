@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants.dart';
 import '../../core/formatters.dart';
 import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../models/models.dart';
 import '../../widgets/common.dart';
+import '../requests/create_request_screen.dart';
 import '../setup/account_setup_screen.dart';
 
-/// In-app documentation for rent-car companies: how to open a business
-/// account and join the commission hub.
+/// In-app guide for rent-car companies: how the prepaid-request hub brings
+/// them customers for free.
 class BusinessGuideScreen extends StatelessWidget {
   const BusinessGuideScreen({super.key, this.showCta = true});
 
@@ -17,16 +19,10 @@ class BusinessGuideScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final example = CommissionCalculator.compute(
-      days: 3,
-      pricePerDay: 150,
-      tierRate: AmbassadorTier.gold.commissionRate,
-    );
-    final agencyKeeps = example.netDt - example.commissionDt;
+    final example = RequestPricing.fromAmountDue(700);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Guide entreprise')),
+      appBar: AppBar(title: const Text('Guide agences')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
@@ -38,17 +34,17 @@ class BusinessGuideScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Des locations en plus, sans pub à payer',
+                        'Des clients sûrs, gratuitement',
                         style: AppTheme.display(
                           fontSize: 21,
                           color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Les ambassadeurs Dada partagent vos voitures. '
-                        'Vous ne payez que lorsqu\'une location est terminée '
-                        'et payée.',
+                      Text(
+                        'Chaque demande du hub a déjà été prépayée à '
+                        '${Fmt.percent(kPrepaymentRate)} par le client. Vous '
+                        'la prenez, vous louez, vous encaissez le reste.',
                       ),
                     ],
                   ),
@@ -60,10 +56,19 @@ class BusinessGuideScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           const SectionTitle('Comment ça marche'),
-          ..._steps.indexed.map(
-            (e) => _StepTile(number: e.$1 + 1, title: e.$2.$1, body: e.$2.$2),
-          ),
+          for (final (i, (title, body)) in _steps.indexed)
+            _StepTile(number: i + 1, title: title, body: body),
           const SizedBox(height: 12),
+          const SectionTitle('Exemple : Mercedes Classe G, 3 jours'),
+          PricingBreakdown(pricing: example),
+          const SizedBox(height: 8),
+          Text(
+            'L\'agence n\'a rien payé pour ce client : elle encaisse '
+            '${Fmt.dinars(example.agencyDt)}. L\'acompte de '
+            '${Fmt.dinars(example.prepaymentDt)} reste à Dada, qui verse '
+            '${Fmt.coins(example.ambassadorCoins)} à l\'ambassadeur.',
+          ),
+          const SizedBox(height: 20),
           const SectionTitle('Documents à préparer'),
           Card(
             child: Column(
@@ -75,41 +80,6 @@ class BusinessGuideScreen extends StatelessWidget {
                     title: Text(t.label),
                   ),
               ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          const SectionTitle('Ce que vous payez : un exemple'),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _Row(
-                    'Sami loue 3 jours à 150 DT',
-                    Fmt.dinars(example.grossDt),
-                  ),
-                  _Row(
-                    'Remise client (code) −5 %',
-                    '−${Fmt.dinars(example.discountDt)}',
-                  ),
-                  _Row('Sami paie', Fmt.dinars(example.netDt), bold: true),
-                  const Divider(),
-                  _Row(
-                    'Part de l\'ambassadrice (niveau Or 16 %)',
-                    Fmt.dinars(example.commissionDt),
-                  ),
-                  _Row('Il vous reste', Fmt.dinars(agencyKeeps), bold: true),
-                  const SizedBox(height: 8),
-                  Text(
-                    'L\'ambassadrice reçoit ${Fmt.coins(example.coins)} '
-                    '(10 DC = 1 DT), à dépenser dans la boutique Dada.',
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -130,11 +100,11 @@ class BusinessGuideScreen extends StatelessWidget {
             FilledButton.icon(
               key: const Key('guide-start-business'),
               icon: const Icon(Icons.rocket_launch_outlined),
-              label: const Text('Créer mon compte entreprise'),
+              label: const Text('Créer mon compte agence'),
               onPressed: () {
                 final state = AppScope.read(context);
                 if (state.myCompany != null) {
-                  showSnack(context, 'Votre entreprise est déjà inscrite.');
+                  showSnack(context, 'Votre agence est déjà inscrite.');
                   return;
                 }
                 Navigator.of(context).push(
@@ -154,62 +124,52 @@ class BusinessGuideScreen extends StatelessWidget {
 
   static const _steps = [
     (
-      'Créez un compte « Entreprise »',
-      'Connexion Facebook, Google ou WhatsApp, puis choisissez « Entreprise de '
-          'location de voitures ».',
+      'Créez un compte « Agence »',
+      'Fiche de l\'agence, documents, conditions. Gratuit.',
     ),
     (
-      'Remplissez la fiche de votre agence',
-      'Nom commercial, matricule fiscal, adresse, téléphone, taille de la flotte.',
+      'Dada valide votre agence',
+      'Après vérification des documents, vous voyez le bouton « Prendre en '
+          'charge » sur les demandes.',
     ),
     (
-      'Envoyez vos documents',
-      'Une photo de chaque document. Vous pouvez compléter plus tard.',
+      'Les clients publient leurs demandes',
+      'Voiture voulue, dates, ville, prix annoncé, avec le code d\'un '
+          'ambassadeur (−5 %) et 10 % d\'acompte payés par Click to Pay.',
     ),
     (
-      'Acceptez l\'accord de commission',
-      'Commission seulement sur les locations terminées et payées.',
+      'Vous prenez une demande',
+      'Vous recevez le téléphone du client : appel ou WhatsApp en un clic.',
     ),
     (
-      'L\'équipe Dada valide votre dossier',
-      'Vous êtes notifié dès que votre agence est validée.',
+      'Vous louez et encaissez 90 %',
+      'Le client vous paie le reste à la remise de la voiture.',
     ),
     (
-      'Ajoutez vos voitures et vos prix',
-      'Elles apparaissent dans la marketplace : les ambassadeurs les partagent.',
-    ),
-    (
-      'Recevez des clients',
-      'Le client réserve avec un code (−5 %). Après le retour de la voiture, '
-          'vous réglez la commission ; l\'ambassadeur reçoit ses Dada Coins.',
+      'Vous marquez « louée »',
+      'Avec la voiture louée et le prix final. La demande passe « terminée ».',
     ),
   ];
 
   static const _faq = [
     (
-      'Combien coûte l\'inscription ?',
-      'Rien. Vous payez uniquement une commission sur les locations terminées '
-          'et payées venues d\'un ambassadeur.',
+      'Combien ça coûte à l\'agence ?',
+      'Rien. Les 10 % d\'acompte payés par le client financent l\'ambassadeur '
+          '(8 %) et Dada (2 %). L\'acompte n\'est pas reversé à l\'agence.',
     ),
     (
-      'Et si le client annule ou est remboursé ?',
-      'Pas de commission. Si la commission était déjà comptée, elle est annulée '
-          'et les coins sont repris à l\'ambassadeur.',
+      'Pourquoi les clients sont « sûrs » ?',
+      'Parce qu\'ils ont déjà payé 10 % : une demande non payée n\'apparaît '
+          'jamais dans le hub.',
     ),
     (
-      'Qui fixe le pourcentage ?',
-      'Le niveau de l\'ambassadeur : Bronze 8 %, Argent 12 %, Or 16 %, '
-          'Diamant 20 %. Le client a toujours −5 % sur sa première location.',
+      'Et si je n\'ai pas la voiture demandée ?',
+      'Ne prenez que les demandes que vous pouvez servir, ou proposez un '
+          'équivalent au client avant de la prendre.',
     ),
     (
-      'Comment je règle les commissions ?',
-      'Un relevé mensuel liste chaque location concernée. Vous réglez Dada, qui '
-          'crédite les coins aux ambassadeurs.',
-    ),
-    (
-      'Mes données sont-elles visibles ?',
-      'Les ambassadeurs ne voient jamais le nom de vos clients, seulement '
-          'l\'état de la réservation.',
+      'Qui voit le téléphone du client ?',
+      'Seulement l\'agence qui prend la demande. Le hub affiche un nom masqué.',
     ),
   ];
 }
@@ -261,29 +221,6 @@ class _StepTile extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Row extends StatelessWidget {
-  const _Row(this.label, this.value, {this.bold = false});
-  final String label;
-  final String value;
-  final bool bold;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: style)),
-          Text(value, style: style),
         ],
       ),
     );

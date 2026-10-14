@@ -281,7 +281,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
     _Step.profile => 'Mon profil',
     _Step.company => 'Mon entreprise',
     _Step.documents => 'Documents',
-    _Step.agreement => _isCompany ? 'Accord de commission' : 'Les règles',
+    _Step.agreement => _isCompany ? 'Conditions agence' : 'Les règles',
   };
 
   // ------------------------------------------------------------------ steps
@@ -298,12 +298,23 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
         const Text('Vous pourrez demander un changement plus tard.'),
         const SizedBox(height: 16),
         _TypeCard(
+          key: const Key('type-client'),
+          image: 'assets/images/fluent/car_citadine.png',
+          title: 'Client : je veux louer une voiture',
+          subtitle:
+              'Je publie la voiture que je cherche avec le code d\'un '
+              'ambassadeur (−5 %) et un acompte de 10 % : les agences me '
+              'contactent.',
+          selected: _role == UserRole.client,
+          onTap: () => setState(() => _role = UserRole.client),
+        ),
+        _TypeCard(
           key: const Key('type-ambassador'),
           image: 'assets/images/fluent/money_bag.png',
           title: 'Ambassadeur',
           subtitle:
-              'Je partage des voitures avec mon code et je gagne des Dada '
-              'Coins sur chaque location. Dès 18 ans.',
+              'Je partage mon code. Chaque client qui prépaie me rapporte '
+              'tout de suite 8 % en Dada Coins. Dès 18 ans.',
           selected: _role == UserRole.ambassador,
           onTap: () => setState(() => _role = UserRole.ambassador),
         ),
@@ -312,8 +323,8 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
           image: 'assets/images/fluent/gift.png',
           title: 'Partenaire (hôtel, agence, commerce)',
           subtitle:
-              'Je pose un QR code à mon accueil : mes clients réservent, '
-              'mon établissement gagne des coins.',
+              'Je pose mon QR code à l\'accueil : chaque client qui prépaie '
+              'rapporte 8 % en coins à mon établissement.',
           selected: _role == UserRole.partner,
           onTap: () => setState(() => _role = UserRole.partner),
         ),
@@ -322,8 +333,8 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
           image: 'assets/images/fluent/company.png',
           title: 'Entreprise de location de voitures',
           subtitle:
-              'Je rejoins le hub : les ambassadeurs m\'apportent des clients, '
-              'je ne paie une commission que sur les locations terminées.',
+              'Je reçois des clients qui ont déjà payé 10 % d\'acompte. Je '
+              'les contacte et j\'encaisse les 90 % restants. Gratuit.',
           selected: _role == UserRole.companyAdmin,
           onTap: () => setState(() => _role = UserRole.companyAdmin),
         ),
@@ -335,7 +346,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
             ),
           ),
           icon: const Icon(Icons.menu_book_outlined),
-          label: const Text('Lire le guide entreprise'),
+          label: const Text('Lire le guide agences'),
         ),
       ],
     );
@@ -541,11 +552,48 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
   }
 
   Widget _agreementStep() {
-    final example = CommissionCalculator.compute(
-      days: 3,
-      pricePerDay: 150,
-      tierRate: AmbassadorTier.gold.commissionRate,
-    );
+    // The concept's example: 700 DT due for a G-Class, 3 days.
+    final example = RequestPricing.fromAmountDue(700);
+    final (title, body) = switch (_role) {
+      UserRole.companyAdmin => (
+        'Comment vous gagnez',
+        'Inscription gratuite. Vous prenez les demandes de clients qui ont '
+            'déjà payé ${Fmt.percent(kPrepaymentRate)} à Dada, vous les '
+            'contactez et vous encaissez les '
+            '${Fmt.percent(1 - kPrepaymentRate)} restants.',
+      ),
+      UserRole.client => (
+        'Comment ça marche',
+        'Avec le code d\'un ambassadeur vous payez '
+            '${Fmt.percent(kCustomerDiscountRate)} de moins. Vous réglez '
+            '${Fmt.percent(kPrepaymentRate)} d\'acompte avec Click to Pay, '
+            'le reste à l\'agence.',
+      ),
+      _ => (
+        'Comment vous gagnez',
+        '${Fmt.percent(kAmbassadorRate)} du prix de chaque location prépayée '
+            'avec votre code, en Dada Coins (10 DC = 1 DT), dès que le client '
+            'paie son acompte.',
+      ),
+    };
+    final rules = switch (_role) {
+      UserRole.companyAdmin =>
+        '• Contacter vite les clients des demandes prises.\n'
+            '• Proposer la voiture demandée ou équivalente, au prix annoncé.\n'
+            '• Marquer la location comme terminée avec la voiture louée.\n'
+            '• L\'acompte de 10 % reste à Dada.\n'
+            '• Votre agence prend des demandes après validation des documents.',
+      UserRole.client =>
+        '• L\'acompte de 10 % n\'est pas remboursé si vous ne venez pas.\n'
+            '• Votre téléphone n\'est visible que par l\'agence qui prend la demande.\n'
+            '• Un compte par personne.',
+      _ =>
+        '• Pas d\'auto-parrainage : votre propre code ne marche pas pour vous.\n'
+            '• Un compte par personne.\n'
+            '• Coins crédités seulement après un acompte payé.\n'
+            '• Acompte remboursé (fraude) = coins repris.\n'
+            '• « #sponsorisé » sur vos vidéos.',
+    };
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -554,26 +602,17 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _isCompany ? 'Comment vous payez' : 'Comment vous gagnez',
+                title,
                 style: AppTheme.display(fontSize: 20, color: Colors.white),
               ),
               const SizedBox(height: 8),
-              Text(
-                _isCompany
-                    ? 'Rien à l\'inscription. Pour chaque location terminée et '
-                          'payée venue d\'un code, vous versez la part de '
-                          'l\'ambassadeur (8 à 20 % selon son niveau). Le client '
-                          'a −5 % sur sa première location.'
-                    : 'De 8 à 20 % de chaque location payée par vos clients, '
-                          'en Dada Coins (10 DC = 1 DT), 7 jours après le '
-                          'retour de la voiture.',
-              ),
+              Text(body),
               const SizedBox(height: 12),
               Text(
-                'Exemple : 3 jours × 150 DT − 5 % = '
-                '${Fmt.dinars(example.netDt)} → part Or 16 % = '
-                '${Fmt.dinars(example.commissionDt)} = '
-                '${Fmt.coins(example.coins)}',
+                'Exemple : Classe G, 3 jours, ${Fmt.dinars(example.amountDueDt)} '
+                '→ acompte ${Fmt.dinars(example.prepaymentDt)} → ambassadeur '
+                '${Fmt.coins(example.ambassadorCoins)} → agence '
+                '${Fmt.dinars(example.agencyDt)}',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
@@ -581,19 +620,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
         ),
         const SizedBox(height: 16),
         const SectionTitle('Les règles'),
-        Text(
-          _isCompany
-              ? '• Commission due uniquement sur les locations terminées et payées.\n'
-                    '• Location remboursée = commission annulée.\n'
-                    '• Prix affichés honnêtes, identiques à ceux de l\'agence.\n'
-                    '• Paiement des commissions à Dada chaque mois.\n'
-                    '• Votre agence est visible après validation des documents.'
-              : '• Pas d\'auto-parrainage (même téléphone, CIN ou carte).\n'
-                    '• Un compte par personne.\n'
-                    '• Coins seulement pour une location terminée et payée.\n'
-                    '• Location remboursée = coins repris.\n'
-                    '• « #sponsorisé » sur vos vidéos.',
-        ),
+        Text(rules),
         const SizedBox(height: 8),
         CheckboxListTile(
           key: const Key('setup-accept'),
@@ -603,7 +630,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
           onChanged: (v) => setState(() => _accepted = v ?? false),
           title: Text(
             _isCompany
-                ? 'J\'accepte l\'accord de commission Dada Commission.'
+                ? 'J\'accepte les conditions agences de Dada Commission.'
                 : 'J\'accepte les règles du programme.',
           ),
         ),

@@ -1,5 +1,4 @@
 import '../core/constants.dart';
-import 'ambassador_tier.dart';
 import 'json_utils.dart';
 
 /// How the account signed in. Only these three providers are planned;
@@ -14,19 +13,28 @@ enum AuthProviderType {
   final String label;
 }
 
-/// What the account does in the app ("Les acteurs" in the concept).
+/// What the account does in the app.
 enum UserRole {
-  /// Anyone 18+ who shares a code/link (Yasmine, Karim).
+  /// Wants to rent a car: posts a request with an ambassador's code and
+  /// prepays 10 %.
+  client('Client'),
+
+  /// Anyone 18+ who shares a code/link and earns 8 % in Dada Coins.
   ambassador('Ambassadeur'),
 
-  /// A venue (hotel, agency…) with a QR code at the reception (Mehdi).
+  /// A venue (hotel, agency…) with a QR code at the reception. Earns like an
+  /// ambassador.
   partner('Partenaire'),
 
-  /// Owner/manager of a rent-car company registered on the platform.
+  /// Rent-car company: takes prepaid requests and rents the car.
   companyAdmin('Agence de location'),
 
-  /// Dada team: validates commissions, ships rewards (Leïla).
+  /// Dada team: approves agencies, handles disputes.
   staff('Équipe Dada');
+
+  /// Has a code and earns coins when clients use it.
+  bool get earnsCommission =>
+      this == UserRole.ambassador || this == UserRole.partner;
 
   const UserRole(this.label);
   final String label;
@@ -51,15 +59,10 @@ class AppUser {
   /// `referralCodes/{code}` -> `{uid}` so uniqueness can be enforced.
   final String referralCode;
 
-  final AmbassadorTier tier;
-
-  /// Completed rentals over the last 3 months (drives [tier]).
-  final int completedRentals3m;
-
   /// Set when the user owns/manages a rent-car company.
   final String? companyId;
 
-  /// CIN checked once (needed for rewards above 5 000 DC).
+  /// CIN checked once by the Dada team.
   final bool isIdVerified;
   final bool isBanned;
   final DateTime? birthDate;
@@ -80,8 +83,6 @@ class AppUser {
     required this.referralCode,
     required this.createdAt,
     this.role = UserRole.ambassador,
-    this.tier = AmbassadorTier.bronze,
-    this.completedRentals3m = 0,
     this.photoUrl,
     this.bio,
     this.city,
@@ -106,8 +107,7 @@ class AppUser {
   }
 
   /// "Ambassadeur Or", "Agence de location"…
-  String get headline =>
-      role == UserRole.ambassador ? '${role.label} ${tier.label}' : role.label;
+  String get headline => role.label;
 
   factory AppUser.fromJson(String id, Map<String, dynamic> json) => AppUser(
     id: id,
@@ -124,8 +124,6 @@ class AppUser {
     ),
     role: readEnum(UserRole.values, json['role'], UserRole.ambassador),
     referralCode: readString(json['referralCode']).toUpperCase(),
-    tier: readEnum(AmbassadorTier.values, json['tier'], AmbassadorTier.bronze),
-    completedRentals3m: readInt(json['completedRentals3m']),
     companyId: readNullableString(json['companyId']),
     isIdVerified: readBool(json['isIdVerified']),
     isBanned: readBool(json['isBanned']),
@@ -145,8 +143,6 @@ class AppUser {
     'authProvider': authProvider.name,
     'role': role.name,
     'referralCode': referralCode,
-    'tier': tier.name,
-    'completedRentals3m': completedRentals3m,
     'companyId': companyId,
     'isIdVerified': isIdVerified,
     'isBanned': isBanned,
@@ -164,8 +160,6 @@ class AppUser {
     String? phone,
     String? email,
     UserRole? role,
-    AmbassadorTier? tier,
-    int? completedRentals3m,
     String? companyId,
     bool? isIdVerified,
     DateTime? birthDate,
@@ -182,8 +176,6 @@ class AppUser {
     authProvider: authProvider,
     role: role ?? this.role,
     referralCode: referralCode,
-    tier: tier ?? this.tier,
-    completedRentals3m: completedRentals3m ?? this.completedRentals3m,
     companyId: companyId ?? this.companyId,
     isIdVerified: isIdVerified ?? this.isIdVerified,
     isBanned: isBanned,

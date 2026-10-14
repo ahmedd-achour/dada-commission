@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../models/ambassador_tier.dart';
-
 /// Samsung-inspired palette (deep "Samsung blue" + fresh green, as on the
 /// boot/loading screen) on top of the Shnell layout language: Inter body
 /// text, Outfit/Poppins titles, 16 px rounded surfaces.
@@ -28,8 +26,6 @@ class AppTheme {
     colors: [blue, blueBright, green],
   );
 
-  /// Tier colour of the "Or" level (not a brand colour).
-  static const Color gold = Color(0xFFC9A227);
   static const Color navUnselected = Color(0xFF9AA0AE);
   static const Color success = Color(0xFF2E7D32);
   static const Color danger = Color(0xFFC62828);
@@ -141,11 +137,4 @@ class AppTheme {
     );
     return useGoogleFonts ? GoogleFonts.poppins(textStyle: base) : base;
   }
-
-  static Color tierColor(AmbassadorTier tier) => switch (tier) {
-    AmbassadorTier.bronze => const Color(0xFFB0703A),
-    AmbassadorTier.silver => const Color(0xFF8A8D91),
-    AmbassadorTier.gold => gold,
-    AmbassadorTier.diamond => const Color(0xFF3A9BD9),
-  };
 }

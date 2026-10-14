@@ -77,10 +77,10 @@ class CompanyDocument {
 /// A rent-car company: `companies/{id}`.
 ///
 /// Dada Rent Car is the flagship company; other agencies register through the
-/// account-setup wizard and appear in the marketplace once the Dada team has
-/// checked their documents. The company pays the ambassador's commission on
-/// every rental it gets through a code, link or QR code; Dada converts it to
-/// Dada Coins.
+/// account-setup wizard. Once the Dada team has checked their documents they
+/// can take prepaid client requests from the feed. They pay nothing to Dada:
+/// the client's 10 % prepayment covers the ambassador and Dada, and the agency
+/// collects the remaining 90 % from the client.
 class RentalCompany {
   final String id;
   final String name;
@@ -144,6 +144,31 @@ class RentalCompany {
   /// Every required paper has at least been sent.
   bool get hasAllDocuments => CompanyDocumentType.values.every(
     (t) => documentStatus(t) != DocumentStatus.missing,
+  );
+
+  RentalCompany copyWith({
+    List<CompanyDocument>? documents,
+    CompanyStatus? status,
+  }) => RentalCompany(
+    id: id,
+    name: name,
+    ownerUid: ownerUid,
+    city: city,
+    phone: phone,
+    taxRegistrationNumber: taxRegistrationNumber,
+    createdAt: createdAt,
+    logoUrl: logoUrl,
+    address: address,
+    email: email,
+    contactName: contactName,
+    rneNumber: rneNumber,
+    fleetSize: fleetSize,
+    isFlagship: isFlagship,
+    customerDiscountRate: customerDiscountRate,
+    documents: documents ?? this.documents,
+    agreementAcceptedAt: agreementAcceptedAt,
+    status: status ?? this.status,
+    rejectionReason: rejectionReason,
   );
 
   factory RentalCompany.fromJson(String id, Map<String, dynamic> json) =>

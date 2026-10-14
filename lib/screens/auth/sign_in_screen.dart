@@ -69,8 +69,9 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Partagez une voiture, gagnez des Dada Coins, '
-                        'échangez-les contre des cadeaux.',
+                        'Le hub des locations prépayées : les clients '
+                        'réservent avec −5 %, les ambassadeurs gagnent 8 % en '
+                        'Dada Coins, les agences reçoivent des clients sûrs.',
                         style: AppTheme.body(fontSize: 15, color: muted),
                       ),
                       const SizedBox(height: 40),

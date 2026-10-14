@@ -1,24 +1,20 @@
-import '../core/constants.dart';
+import '../core/formatters.dart';
 import '../models/models.dart';
 
-/// Demo content for guest mode, built around the concept's example
-/// (Yasmine, Gold level, 184 DC after a 684 DC commission and a 50 DT voucher).
+/// Demo content for guest mode. The guest is Yasmine, an ambassador whose
+/// code YASMINE20 brought three prepaid requests (one of them the Mercedes
+/// G-Class example: 700 DT due -> 70 DT prepaid -> 560 DC for Yasmine).
 /// Replace with Firestore reads once authentication is wired.
 class MockData {
-  static const _img = 'assets/images/fluent';
-
   MockData(this.now);
 
   final DateTime now;
 
-  DateTime _ago({int days = 0, int hours = 0, int minutes = 0}) =>
-      now.subtract(Duration(days: days, hours: hours, minutes: minutes));
+  DateTime _ago({int days = 0, int hours = 0}) =>
+      now.subtract(Duration(days: days, hours: hours));
 
-  static DateTime _expiry(DateTime earnedAt) => DateTime(
-    earnedAt.year,
-    earnedAt.month + kCoinsExpiryMonths,
-    earnedAt.day,
-  );
+  DateTime _in(int days) =>
+      DateTime(now.year, now.month, now.day).add(Duration(days: days));
 
   late final AppUser guest = AppUser(
     id: 'u_yasmine',
@@ -28,8 +24,6 @@ class MockData {
     phone: '+216 22 345 678',
     authProvider: AuthProviderType.guest,
     referralCode: 'YASMINE20',
-    tier: AmbassadorTier.gold,
-    completedRentals3m: 10,
     isIdVerified: true,
     birthDate: DateTime(2001, 5, 14),
     createdAt: _ago(days: 120),
@@ -37,23 +31,12 @@ class MockData {
 
   late final List<AppUser> otherUsers = [
     AppUser(
-      id: 'u_dada',
-      displayName: 'Dada Rent Car',
-      role: UserRole.companyAdmin,
-      authProvider: AuthProviderType.google,
-      referralCode: 'DADA',
-      companyId: 'c_dada',
-      city: 'Tunis',
-      createdAt: _ago(days: 400),
-    ),
-    AppUser(
       id: 'u_sara',
       displayName: 'Sara K.',
       authProvider: AuthProviderType.facebook,
       referralCode: 'SARA11',
-      tier: AmbassadorTier.gold,
-      completedRentals3m: 11,
       city: 'Sousse',
+      setupComplete: true,
       createdAt: _ago(days: 90),
     ),
     AppUser(
@@ -61,9 +44,8 @@ class MockData {
       displayName: 'Amine B.',
       authProvider: AuthProviderType.google,
       referralCode: 'AMINE14',
-      tier: AmbassadorTier.gold,
-      completedRentals3m: 14,
       city: 'Sfax',
+      setupComplete: true,
       createdAt: _ago(days: 200),
     ),
     AppUser(
@@ -71,10 +53,8 @@ class MockData {
       displayName: 'Karim M.',
       authProvider: AuthProviderType.whatsapp,
       referralCode: 'KARIM05',
-      tier: AmbassadorTier.silver,
-      completedRentals3m: 4,
-      bio: 'Étudiant · lien envoyé sur WhatsApp',
       city: 'Tunis',
+      setupComplete: true,
       createdAt: _ago(days: 45),
     ),
     AppUser(
@@ -83,8 +63,21 @@ class MockData {
       role: UserRole.partner,
       authProvider: AuthProviderType.google,
       referralCode: 'LESPINS',
+      venueName: 'Hôtel Les Pins',
       city: 'Hammamet',
+      setupComplete: true,
       createdAt: _ago(days: 60),
+    ),
+    AppUser(
+      id: 'u_dada',
+      displayName: 'Dada Rent Car',
+      role: UserRole.companyAdmin,
+      authProvider: AuthProviderType.google,
+      referralCode: 'DADA',
+      companyId: 'c_dada',
+      city: 'Tunis',
+      setupComplete: true,
+      createdAt: _ago(days: 400),
     ),
   ];
 
@@ -114,253 +107,159 @@ class MockData {
     ),
   ];
 
-  late final List<Car> cars = [
-    const Car(
-      id: 'car_picanto',
-      companyId: 'c_dada',
-      companyName: 'Dada Rent Car',
-      model: 'Kia Picanto',
-      imageUrl: '$_img/car_citadine.png',
-      category: CarCategory.citadine,
-      pricePerDay: 150,
+  late final List<RentalRequest> requests = [
+    RentalRequest(
+      id: 'rq1',
+      referralCode: 'YASMINE20',
+      ambassadorId: guest.id,
+      ambassadorName: guest.displayName,
+      clientId: 'c_sami',
+      clientName: 'Sami Ben Ali',
+      clientPhone: '+216 98 111 222',
+      carWanted: 'Mercedes-Benz Classe G',
+      category: CarCategory.luxe,
       city: 'Tunis',
-      seats: 4,
-    ),
-    const Car(
-      id: 'car_clio',
-      companyId: 'c_dada',
-      companyName: 'Dada Rent Car',
-      model: 'Renault Clio 5',
-      imageUrl: '$_img/car_berline.png',
-      category: CarCategory.compacte,
-      pricePerDay: 170,
-      city: 'Tunis',
-    ),
-    const Car(
-      id: 'car_3008',
-      companyId: 'c_dada',
-      companyName: 'Dada Rent Car',
-      model: 'Peugeot 3008',
-      imageUrl: '$_img/car_suv.png',
-      category: CarCategory.suv,
-      pricePerDay: 280,
-      city: 'Tunis',
-      transmission: Transmission.automatic,
-    ),
-    const Car(
-      id: 'car_doblo',
-      companyId: 'c_dada',
-      companyName: 'Dada Rent Car',
-      model: 'Fiat Doblò',
-      imageUrl: '$_img/car_utilitaire.png',
-      category: CarCategory.utilitaire,
-      pricePerDay: 190,
-      city: 'Ben Arous',
-      seats: 2,
-    ),
-    const Car(
-      id: 'car_i10',
-      companyId: 'c_sahara',
-      companyName: 'Sahara Cars',
-      model: 'Hyundai i10',
-      imageUrl: '$_img/car_citadine.png',
-      category: CarCategory.citadine,
-      pricePerDay: 120,
-      city: 'Djerba',
-      seats: 4,
-    ),
-    const Car(
-      id: 'car_golf',
-      companyId: 'c_sahara',
-      companyName: 'Sahara Cars',
-      model: 'Volkswagen Golf 8',
-      imageUrl: '$_img/car_berline.png',
-      category: CarCategory.berline,
-      pricePerDay: 220,
-      city: 'Djerba',
-      transmission: Transmission.automatic,
-    ),
-  ];
-
-  late final List<Post> posts = [
-    Post(
-      id: 'p1',
-      authorId: guest.id,
-      authorName: guest.displayName,
-      authorTier: guest.tier,
-      type: PostType.carPromo,
-      text:
-          '3 jours à Hammamet à 150 DT/jour.\n'
-          'Réservez avec mon code YASMINE20 : −5 % 🌊 #sponsorisé',
-      carId: 'car_picanto',
-      carModel: 'Kia Picanto',
-      carPricePerDay: 150,
-      carCompanyName: 'Dada Rent Car',
-      referralCode: guest.referralCode,
-      isSponsored: true,
-      likeCount: 48,
-      commentCount: 2,
-      shareCount: 12,
+      startDate: _in(3),
+      endDate: _in(6),
+      note: 'Pour un mariage, livraison à l\'hôtel si possible.',
+      // 700 DT after the −5 % code discount.
+      listPriceDt: 736.842,
+      status: RequestStatus.open,
+      paymentId: 'pay_rq1',
+      paidAt: _ago(hours: 2),
       createdAt: _ago(hours: 2),
     ),
-    Post(
-      id: 'p2',
-      authorId: 'u_dada',
-      authorName: 'Dada Rent Car',
-      authorRole: UserRole.companyAdmin,
-      type: PostType.challenge,
-      text:
-          "🏆 Défi d'octobre : 5 locations terminées = +500 DC !\n"
-          'Fin le 31 octobre. Partagez vos codes 🚀',
-      likeCount: 132,
-      commentCount: 1,
-      shareCount: 40,
-      createdAt: _ago(hours: 6),
+    RentalRequest(
+      id: 'rq4',
+      referralCode: 'SARA11',
+      ambassadorId: 'u_sara',
+      ambassadorName: 'Sara K.',
+      clientId: 'c_leila',
+      clientName: 'Leïla Trabelsi',
+      clientPhone: '+216 55 444 333',
+      carWanted: 'Peugeot 3008 automatique',
+      category: CarCategory.suv,
+      city: 'Tunis',
+      startDate: _in(5),
+      endDate: _in(10),
+      listPriceDt: 1400,
+      status: RequestStatus.open,
+      paymentId: 'pay_rq4',
+      paidAt: _ago(hours: 5),
+      createdAt: _ago(hours: 5),
     ),
-    Post(
-      id: 'p3',
-      authorId: 'u_sara',
-      authorName: 'Sara K.',
-      authorTier: AmbassadorTier.gold,
-      type: PostType.status,
-      text:
-          'Mon 11e client ce mois-ci 🎉 Merci à tous ceux qui ont réservé '
-          'avec SARA11 !',
-      likeCount: 27,
-      createdAt: _ago(hours: 9),
-    ),
-    Post(
-      id: 'p4',
-      authorId: 'u_amine',
-      authorName: 'Amine B.',
-      authorTier: AmbassadorTier.gold,
-      type: PostType.carPromo,
-      text: 'SUV automatique pour un week-end en famille. Code AMINE14 = −5 %',
-      carId: 'car_3008',
-      carModel: 'Peugeot 3008',
-      carPricePerDay: 280,
-      carCompanyName: 'Dada Rent Car',
-      referralCode: 'AMINE14',
-      likeCount: 19,
-      shareCount: 3,
-      createdAt: _ago(days: 1, hours: 3),
-    ),
-    Post(
-      id: 'p5',
-      authorId: 'u_mehdi',
-      authorName: 'Hôtel Les Pins',
-      authorRole: UserRole.partner,
-      type: PostType.carPromo,
-      text:
-          'Nos clients peuvent réserver une voiture directement depuis la '
-          'réception grâce au QR code 📍 Hammamet',
-      carId: 'car_i10',
-      carModel: 'Hyundai i10',
-      carPricePerDay: 120,
-      carCompanyName: 'Sahara Cars',
-      referralCode: 'LESPINS',
-      likeCount: 11,
-      createdAt: _ago(days: 2),
-    ),
-  ];
-
-  late final Map<String, List<Comment>> comments = {
-    'p1': [
-      Comment(
-        id: 'c1',
-        postId: 'p1',
-        authorId: 'u_karim',
-        authorName: 'Karim M.',
-        text: 'Je la prends pour le week-end prochain 🔥',
-        createdAt: _ago(hours: 1, minutes: 20),
-      ),
-      Comment(
-        id: 'c2',
-        postId: 'p1',
-        authorId: 'u_sara',
-        authorName: 'Sara K.',
-        text: 'Super photo ! Hammamet en octobre 😍',
-        createdAt: _ago(minutes: 45),
-      ),
-    ],
-    'p2': [
-      Comment(
-        id: 'c3',
-        postId: 'p2',
-        authorId: 'u_amine',
-        authorName: 'Amine B.',
-        text: "J'en suis à 4, plus qu'une ! 💪",
-        createdAt: _ago(hours: 3),
-      ),
-    ],
-  };
-
-  late final List<Referral> referrals = [
-    Referral(
-      id: 'r1',
+    RentalRequest(
+      id: 'rq2',
+      referralCode: 'YASMINE20',
       ambassadorId: guest.id,
-      referralCode: guest.referralCode,
+      ambassadorName: guest.displayName,
+      clientId: 'c_maha',
+      clientName: 'Maha Jlassi',
+      clientPhone: '+216 20 555 666',
+      carWanted: 'Kia Picanto ou équivalent',
+      category: CarCategory.citadine,
+      city: 'Sousse',
+      startDate: _in(1),
+      endDate: _in(5),
+      listPriceDt: 600,
+      status: RequestStatus.claimed,
+      paymentId: 'pay_rq2',
+      paidAt: _ago(days: 1),
       companyId: 'c_dada',
-      carId: 'car_picanto',
-      carModel: 'Citadine',
-      customerMaskedName: Referral.maskName('Sami'),
-      rentalDays: 3,
-      pricePerDay: 150,
-      commissionRate: AmbassadorTier.gold.commissionRate,
-      status: ReferralStatus.validated,
-      bookedAt: _ago(days: 16),
-      startDate: _ago(days: 13),
-      returnedAt: _ago(days: 10),
+      companyName: 'Dada Rent Car',
+      claimedAt: _ago(hours: 20),
+      createdAt: _ago(days: 1),
     ),
-    Referral(
-      id: 'r2',
-      ambassadorId: guest.id,
-      referralCode: guest.referralCode,
-      companyId: 'c_dada',
-      carId: 'car_clio',
-      carModel: 'Compacte',
-      customerMaskedName: Referral.maskName('Maha'),
-      source: ReferralSource.link,
-      rentalDays: 2,
-      pricePerDay: 170,
-      commissionRate: AmbassadorTier.gold.commissionRate,
-      status: ReferralStatus.booked,
-      bookedAt: _ago(days: 1),
-      startDate: now.add(Duration(days: (DateTime.saturday - now.weekday) % 7)),
+    RentalRequest(
+      id: 'rq5',
+      referralCode: 'KARIM05',
+      ambassadorId: 'u_karim',
+      ambassadorName: 'Karim M.',
+      clientId: 'c_omar',
+      clientName: 'Omar Gharbi',
+      clientPhone: '+216 23 777 888',
+      carWanted: 'Hyundai i10',
+      category: CarCategory.citadine,
+      city: 'Djerba',
+      startDate: _in(2),
+      endDate: _in(4),
+      listPriceDt: 240,
+      status: RequestStatus.open,
+      paymentId: 'pay_rq5',
+      paidAt: _ago(days: 1, hours: 4),
+      createdAt: _ago(days: 1, hours: 4),
     ),
-    Referral(
-      id: 'r3',
+    RentalRequest(
+      id: 'rq3',
+      referralCode: 'YASMINE20',
       ambassadorId: guest.id,
-      referralCode: guest.referralCode,
+      ambassadorName: guest.displayName,
+      clientId: 'c_rachid',
+      clientName: 'Rachid Mansour',
+      clientPhone: '+216 50 999 000',
+      carWanted: 'Renault Clio ou similaire',
+      category: CarCategory.compacte,
+      city: 'Hammamet',
+      startDate: _ago(days: 6),
+      endDate: _ago(days: 3),
+      listPriceDt: 450,
+      status: RequestStatus.completed,
+      paymentId: 'pay_rq3',
+      paidAt: _ago(days: 9),
       companyId: 'c_sahara',
-      carId: 'car_i10',
-      carModel: 'Citadine',
-      customerMaskedName: Referral.maskName('Rachid'),
-      source: ReferralSource.qr,
-      rentalDays: 4,
-      pricePerDay: 120,
-      commissionRate: AmbassadorTier.gold.commissionRate,
-      status: ReferralStatus.cancelled,
-      bookedAt: _ago(days: 5),
+      companyName: 'Sahara Cars',
+      claimedAt: _ago(days: 8),
+      rentedCar: const RentedCar(
+        model: 'Renault Clio 5',
+        plate: '215 TU 4321',
+        finalPriceDt: 427.5,
+      ),
+      completedAt: _ago(days: 3),
+      createdAt: _ago(days: 9),
+    ),
+    RentalRequest(
+      id: 'rq6',
+      referralCode: 'LESPINS',
+      ambassadorId: 'u_mehdi',
+      ambassadorName: 'Hôtel Les Pins',
+      clientId: 'c_nour',
+      clientName: 'Nour Haddad',
+      clientPhone: '+216 52 123 456',
+      carWanted: 'Volkswagen Golf 8',
+      category: CarCategory.berline,
+      city: 'Hammamet',
+      startDate: _ago(days: 4),
+      endDate: _ago(days: 1),
+      listPriceDt: 660,
+      status: RequestStatus.completed,
+      paymentId: 'pay_rq6',
+      paidAt: _ago(days: 6),
+      companyId: 'c_dada',
+      companyName: 'Dada Rent Car',
+      claimedAt: _ago(days: 6),
+      rentedCar: const RentedCar(model: 'Volkswagen Golf 8', finalPriceDt: 627),
+      completedAt: _ago(days: 1),
+      createdAt: _ago(days: 6),
     ),
   ];
 
-  final ReferralStats stats = const ReferralStats(
-    clicks: 120,
-    bookings: 3,
-    completed: 1,
-  );
-
-  late final Wallet wallet = Wallet(
-    userId: guest.id,
-    balance: 184,
-    lifetimeEarned: 734,
-    updatedAt: _ago(days: 2),
-  );
-
+  /// Yasmine's ledger: one 8 % earning per paid request with her code, plus
+  /// a transfer in and out.
   late final List<CoinTransaction> transactions = [
+    for (final r in requests.where((r) => r.ambassadorId == guest.id))
+      CoinTransaction(
+        id: 't_${r.id}',
+        userId: guest.id,
+        amount: r.pricing.ambassadorCoins,
+        type: CoinTransactionType.referralEarning,
+        title: 'Gain parrainage · ${r.maskedClientName}',
+        subtitle:
+            '${r.carWanted} · acompte ${Fmt.dinars(r.pricing.prepaymentDt)}',
+        requestId: r.id,
+        createdAt: r.paidAt!,
+      ),
     CoinTransaction(
-      id: 't4',
+      id: 't_out',
       userId: guest.id,
       amount: -50,
       type: CoinTransactionType.transferOut,
@@ -371,7 +270,7 @@ class MockData {
       createdAt: _ago(days: 2),
     ),
     CoinTransaction(
-      id: 't3',
+      id: 't_in',
       userId: guest.id,
       amount: 50,
       type: CoinTransactionType.transferIn,
@@ -379,187 +278,15 @@ class MockData {
       counterpartyId: 'u_karim',
       counterpartyName: 'Karim M.',
       createdAt: _ago(days: 3),
-      expiresAt: _expiry(_ago(days: 3)),
     ),
-    CoinTransaction(
-      id: 't2',
-      userId: guest.id,
-      amount: -500,
-      type: CoinTransactionType.redemption,
-      title: "Bon d'achat",
-      subtitle: 'supermarché, 50 DT',
-      createdAt: _ago(days: 2, hours: 5),
-    ),
-    CoinTransaction(
-      id: 't1',
-      userId: guest.id,
-      amount: 684,
-      type: CoinTransactionType.commission,
-      title: 'Commission location',
-      subtitle: '3 jours via YASMINE20',
-      referralId: 'r1',
-      createdAt: _ago(days: 3, hours: 1),
-      expiresAt: _expiry(_ago(days: 3)),
-    ),
-  ];
+  ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-  final List<Reward> rewards = const [
-    Reward(
-      id: 'rw_v20',
-      title: "Bon d'achat 20 DT",
-      category: RewardCategory.voucher,
-      priceCoins: 200,
-      imageUrl: '$_img/reward_shopping.png',
-      description: 'Grandes surfaces partenaires.',
-    ),
-    Reward(
-      id: 'rw_v50',
-      title: "Bon d'achat 50 DT",
-      category: RewardCategory.voucher,
-      priceCoins: 500,
-      imageUrl: '$_img/reward_voucher.png',
-      description: 'Grandes surfaces partenaires.',
-    ),
-    Reward(
-      id: 'rw_v100',
-      title: "Bon d'achat 100 DT",
-      category: RewardCategory.voucher,
-      priceCoins: 1000,
-      imageUrl: '$_img/reward_shopping.png',
-      description: 'Grandes surfaces partenaires.',
-    ),
-    Reward(
-      id: 'rw_phone',
-      title: 'Smartphone',
-      category: RewardCategory.phone,
-      priceCoins: 9000,
-      stock: 5,
-      imageUrl: '$_img/reward_phone.png',
-      description: 'Smartphone milieu de gamme, garantie 1 an.',
-    ),
-    Reward(
-      id: 'rw_laptop',
-      title: 'PC portable',
-      category: RewardCategory.tablet,
-      priceCoins: 15000,
-      stock: 3,
-      imageUrl: '$_img/reward_laptop.png',
-      description: 'PC portable 15 pouces pour les études ou le travail.',
-    ),
-    Reward(
-      id: 'rw_day',
-      title: '1 jour de location',
-      category: RewardCategory.rental,
-      priceCoins: 1500,
-      imageUrl: '$_img/reward_rental_day.png',
-      description: 'Une journée offerte chez Dada Rent Car.',
-    ),
-    Reward(
-      id: 'rw_upgrade',
-      title: 'Voiture plus grande',
-      category: RewardCategory.rental,
-      priceCoins: 800,
-      imageUrl: '$_img/car_suv.png',
-      description: 'Surclassement sur votre prochaine location.',
-    ),
-    Reward(
-      id: 'rw_topup',
-      title: 'Recharge 10 DT',
-      category: RewardCategory.topUp,
-      priceCoins: 100,
-      imageUrl: '$_img/reward_topup.png',
-      description: 'Recharge téléphone ou internet mobile.',
-    ),
-    Reward(
-      id: 'rw_buds',
-      title: 'Casque sans fil',
-      category: RewardCategory.leisure,
-      priceCoins: 1200,
-      imageUrl: '$_img/reward_headphone.png',
-    ),
-    Reward(
-      id: 'rw_watch',
-      title: 'Montre connectée',
-      category: RewardCategory.leisure,
-      priceCoins: 2500,
-      stock: 10,
-      imageUrl: '$_img/reward_watch.png',
-    ),
-    Reward(
-      id: 'rw_resto',
-      title: 'Dîner pour 2',
-      category: RewardCategory.leisure,
-      priceCoins: 900,
-      imageUrl: '$_img/reward_restaurant.png',
-      description: 'Restaurants partenaires à Tunis, Sousse et Hammamet.',
-    ),
-    Reward(
-      id: 'rw_fuel',
-      title: 'Bon carburant 30 DT',
-      category: RewardCategory.leisure,
-      priceCoins: 300,
-      imageUrl: '$_img/reward_fuel.png',
-    ),
-  ];
-
-  late final Challenge challenge = Challenge(
-    id: 'ch_oct',
-    title: "Défi d'octobre",
-    description: '5 locations terminées = +500 DC',
-    target: 5,
-    bonusCoins: 500,
-    progress: 2,
-    startsAt: DateTime(now.year, now.month, 1),
-    endsAt: DateTime(now.year, now.month + 1, 0),
+  late final Wallet wallet = Wallet(
+    userId: guest.id,
+    balance: transactions.fold(0, (sum, t) => sum + t.amount),
+    lifetimeEarned: transactions
+        .where((t) => t.type == CoinTransactionType.referralEarning)
+        .fold(0, (sum, t) => sum + t.amount),
+    updatedAt: _ago(hours: 2),
   );
-
-  final List<AchievementBadge> badges = const [
-    AchievementBadge(
-      id: 'b1',
-      label: '1er client',
-      shortLabel: '1',
-      earned: true,
-    ),
-    AchievementBadge(
-      id: 'b10',
-      label: '10 clients',
-      shortLabel: '10',
-      earned: true,
-    ),
-    AchievementBadge(
-      id: 'bv',
-      label: 'Vérifiée',
-      shortLabel: '✓',
-      earned: true,
-    ),
-    AchievementBadge(id: 'b50', label: '50 clients', shortLabel: '50'),
-  ];
-
-  late final List<LeaderboardEntry> leaderboard = [
-    const LeaderboardEntry(
-      rank: 1,
-      userId: 'u_amine',
-      displayName: 'Amine B.',
-      completedRentals: 14,
-    ),
-    const LeaderboardEntry(
-      rank: 2,
-      userId: 'u_sara',
-      displayName: 'Sara K.',
-      completedRentals: 11,
-    ),
-    LeaderboardEntry(
-      rank: 3,
-      userId: guest.id,
-      displayName: 'Vous (Yasmine)',
-      completedRentals: 10,
-      isMe: true,
-    ),
-    const LeaderboardEntry(
-      rank: 4,
-      userId: 'u_karim',
-      displayName: 'Karim M.',
-      completedRentals: 4,
-    ),
-  ];
 }
